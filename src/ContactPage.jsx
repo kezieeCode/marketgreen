@@ -81,7 +81,6 @@ function ContactPage() {
         <div className="contact-hero-overlay">
           <div className="contact-hero-container">
             <div className="contact-hero-content">
-              <p className="contact-hero-subtitle">// Welcome to our company</p>
               <h1 className="contact-hero-title">Contact Us</h1>
             </div>
             <div className="shop-breadcrumbs">
