@@ -64,8 +64,6 @@ function ShopPage() {
             <a href="#" onClick={handleNavigateHome}>Home</a>
             <a href="#" onClick={handleNavigateAbout}>About</a>
             <a href="#" className="active" onClick={handleNavigateShop}>Shop +</a>
-            <a href="#news">News +</a>
-            <a href="#collections">Collections</a>
             <a href="#" onClick={handleNavigateContact}>Contact</a>
           </nav>
 
@@ -75,7 +73,7 @@ function ShopPage() {
                 <path d="M19 19L13 13M15 8C15 11.866 11.866 15 8 15C4.13401 15 1 11.866 1 8C1 4.13401 4.13401 1 8 1C11.866 1 15 4.13401 15 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-            <button className="icon-btn">
+            <button className="icon-btn" onClick={() => navigate('/signup')}>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="currentColor"/>
                 <path d="M10 12C5.58172 12 2 13.7909 2 16V20H18V16C18 13.7909 14.4183 12 10 12Z" fill="currentColor"/>
