@@ -50,7 +50,13 @@ function SignUpPage() {
     setPasswordErrors([])
     setFieldErrors({})
 
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:46',message:'Frontend - signup request initiated',data:{apiEndpoint:API_ENDPOINTS.AUTH.SIGNUP,hasEmail:!!formData.email,hasUsername:!!formData.username,hasPassword:!!formData.password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+
     try {
+      console.log('Calling signup API:', API_ENDPOINTS.AUTH.SIGNUP)
+      
       const response = await fetch(API_ENDPOINTS.AUTH.SIGNUP, {
         method: 'POST',
         headers: {
@@ -64,9 +70,31 @@ function SignUpPage() {
         })
       })
 
-      const data = await response.json()
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:68',message:'Frontend - signup response received',data:{status:response.status,statusText:response.statusText,ok:response.ok,contentType:response.headers.get('content-type')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+
+      // Check if response is ok before trying to parse JSON
+      let data
+      try {
+        data = await response.json()
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:73',message:'Frontend - signup response parsed',data:{hasError:!!data.error,hasField:!!data.field,errorMessage:data.error?.substring(0,100)||null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
+      } catch (jsonError) {
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:75',message:'Frontend - JSON parse error',data:{status:response.status,statusText:response.statusText,jsonError:jsonError.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
+        console.error('JSON parse error:', jsonError)
+        setError(`Server error: ${response.status} ${response.statusText}`)
+        setIsLoading(false)
+        return
+      }
 
       if (response.ok) {
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:81',message:'Frontend - signup success',data:{hasSession:!!data.session,hasUser:!!data.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         // Store session token if available
         if (data.session?.access_token) {
           localStorage.setItem('token', data.session.access_token)
@@ -77,6 +105,9 @@ function SignUpPage() {
         alert('Account created successfully!')
         navigate('/')
       } else {
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:91',message:'Frontend - signup error response',data:{status:response.status,error:data.error,field:data.field,hasRequirements:!!data.requirements},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         // Handle validation errors
         if (data.field === 'password' && data.requirements) {
           setPasswordErrors(data.requirements)
@@ -87,8 +118,16 @@ function SignUpPage() {
         }
       }
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:100',message:'Frontend - signup network error',data:{errorMessage:error.message,errorName:error.name,isFailedFetch:error.message.includes('Failed to fetch'),isNetworkError:error.message.includes('NetworkError')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       console.error('Signup error:', error)
-      setError('Network error. Please check your connection and try again.')
+      // Show more specific error message
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        setError(`Cannot connect to server. Make sure the backend is running at ${API_ENDPOINTS.AUTH.SIGNUP}`)
+      } else {
+        setError(`Network error: ${error.message}. Please check your connection and try again.`)
+      }
     } finally {
       setIsLoading(false)
     }

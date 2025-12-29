@@ -2988,15 +2988,9 @@
   transition: background-color 0.3s, transform 0.2s;
 }
 
-.signup-submit-btn:hover:not(:disabled) {
+.signup-submit-btn:hover {
   background-color: #45a049;
   transform: translateY(-1px);
-}
-
-.signup-submit-btn:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-  opacity: 0.7;
 }
 
 .signup-login-prompt {
@@ -3005,40 +2999,6 @@
   font-size: 0.95rem;
   color: #666;
   margin: 1rem 0 0 0;
-}
-
-/* Error Styles */
-.signup-error-message {
-  background-color: #fee;
-  border: 1px solid #fcc;
-  border-radius: 8px;
-  padding: 0.875rem 1rem;
-  margin-bottom: 1.5rem;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.9rem;
-  color: #c33;
-  text-align: center;
-}
-
-.signup-input-error {
-  border-color: #f44336 !important;
-  background-color: #fff5f5;
-}
-
-.signup-field-error {
-  display: block;
-  margin-top: 0.5rem;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.85rem;
-  color: #f44336;
-}
-
-.signup-requirement-error {
-  color: #f44336;
-}
-
-.signup-requirement-error .signup-requirement-dot {
-  background-color: #f44336;
 }
 
 .signup-graphic-column {
