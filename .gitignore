@@ -1,36 +1,43 @@
 # Dependencies
 node_modules/
-/.pnp
-.pnp.js
+package-lock.json
 
-# Testing
-/coverage
+# Build outputs
+dist/
+build/
+.vite/
 
-# Production
-/dist
-/build
-
-# Misc
-.DS_Store
+# Environment variables
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend directory (parent folder)
+../backend/
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Testing
+coverage/
+.nyc_output/
 
+# Misc
+*.log
+.cache/
