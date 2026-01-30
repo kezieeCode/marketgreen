@@ -77,6 +77,19 @@ function HomePage() {
   const [trendyProducts, setTrendyProducts] = useState([])
   const [isLoadingTrendy, setIsLoadingTrendy] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('vegetables')
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  // Prevent body scroll when mobile drawer is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.classList.add('drawer-open')
+    } else {
+      document.body.classList.remove('drawer-open')
+    }
+    return () => {
+      document.body.classList.remove('drawer-open')
+    }
+  }, [isMobileMenuOpen])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -214,12 +227,26 @@ function HomePage() {
           </nav>
           
           <div className="header-actions">
-            <button className="icon-btn">
+            <button className="icon-btn search-btn">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M19 19L13 13M15 8C15 11.866 11.866 15 8 15C4.13401 15 1 11.866 1 8C1 4.13401 4.13401 1 8 1C11.866 1 15 4.13401 15 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
             <UserMenuDropdown />
+            {/* Mobile Hamburger Menu Button - Only visible on mobile, positioned next to cart */}
+            <button 
+              className="mobile-menu-toggle"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {isMobileMenuOpen ? (
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                ) : (
+                  <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                )}
+              </svg>
+            </button>
             <button className="icon-btn cart-btn" onClick={() => setIsCartOpen(!isCartOpen)}>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M1 1H3L3.4 3M5 11H15L19 3H3.4M5 11L3.4 3M5 11L2.70711 13.2929C2.07714 13.9229 2.52331 15 3.41421 15H15M15 15C13.8954 15 13 15.8954 13 17C13 18.1046 13.8954 19 15 19C16.1046 19 17 18.1046 17 17C17 15.8954 16.1046 15 15 15ZM7 17C7 18.1046 6.10457 19 5 19C3.89543 19 3 18.1046 3 17C3 15.8954 3.89543 15 5 15C6.10457 15 7 15.8954 7 17Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1265,6 +1292,78 @@ function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Mobile Side Drawer - Only visible on mobile */}
+      <div 
+        className={`mobile-drawer-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      >
+        <div 
+          className={`mobile-drawer ${isMobileMenuOpen ? 'open' : ''}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="mobile-drawer-header">
+            <div className="logo">
+              <img src={logo} alt="MarketGreen Logo" />
+              <span className="logo-text">
+                <span className="logo-market">Market</span>
+                <span className="logo-green">Green</span>
+              </span>
+            </div>
+            <button 
+              className="mobile-drawer-close"
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+          <nav className="mobile-drawer-nav">
+            <a 
+              href="#home"
+              onClick={(e) => {
+                e.preventDefault()
+                setIsMobileMenuOpen(false)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
+            >
+              Home
+            </a>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                setIsMobileMenuOpen(false)
+                navigate('/about')
+              }}
+            >
+              About
+            </a>
+            <a 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault()
+                setIsMobileMenuOpen(false)
+                navigate('/shop')
+              }}
+            >
+              Shop +
+            </a>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                setIsMobileMenuOpen(false)
+                navigate('/contact')
+              }}
+            >
+              Contact
+            </a>
+          </nav>
+        </div>
+      </div>
     </div>
   )
 }

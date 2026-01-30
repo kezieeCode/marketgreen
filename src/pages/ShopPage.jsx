@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
 import { useNavigation } from '../context/NavigationContext.jsx'
 import CartDropdown from '../components/CartDropdown.jsx'
 import UserMenuDropdown from '../components/UserMenuDropdown.jsx'
+import { API_ENDPOINTS } from '../config/api.js'
 import '../App.css'
 import logo from '../assets/images/logo.png'
 import backgroundMenuImage from '../assets/images/pictures/background-menu.png'
@@ -33,6 +34,13 @@ function ShopPage() {
   const { setNavigating } = useNavigation()
   const [priceMax, setPriceMax] = useState(1500)
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [products, setProducts] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [sortBy, setSortBy] = useState('default')
+  const [hasLoaded, setHasLoaded] = useState(false)
+  const [topRatedProducts, setTopRatedProducts] = useState([])
+  const [isLoadingTopRated, setIsLoadingTopRated] = useState(true)
 
   const handleNavigateHome = (e) => {
     e.preventDefault()
@@ -52,6 +60,160 @@ function ShopPage() {
   const handleNavigateShop = (e) => {
     e.preventDefault()
     navigate('/shop')
+  }
+
+  // Fetch products from API
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function fetchProducts() {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const response = await fetch(API_ENDPOINTS.PRODUCTS.LIST, {
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch products: ${response.status}`)
+        }
+
+        const data = await response.json()
+        // Handle both array response and object with products property
+        const productsList = Array.isArray(data) ? data : (data.products || [])
+        
+        // Normalize product data
+        const normalizedProducts = productsList.map(product => ({
+          id: product.id,
+          name: product.name || '',
+          price: Number(product.current_price || product.price || 0),
+          originalPrice: Number(product.original_price || product.current_price || product.price || 0),
+          rating: Number(product.rating || 0),
+          reviews: Number(product.review_count || product.reviews || 0),
+          image: product.main_image || product.image_url || '',
+          badge: product.badge || null,
+          category: product.category || '',
+          slug: product.slug || product.id?.toString() || ''
+        }))
+
+        setProducts(normalizedProducts)
+        setHasLoaded(true)
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Error fetching products:', err)
+          setError(err.message)
+          setHasLoaded(true)
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProducts()
+
+    return () => controller.abort()
+  }, [])
+
+  // Fetch top-rated products from API
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function fetchTopRatedProducts() {
+      setIsLoadingTopRated(true)
+
+      try {
+        const response = await fetch(API_ENDPOINTS.PRODUCTS.TOP_RATED(3), {
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch top-rated products: ${response.status}`)
+        }
+
+        const data = await response.json()
+        // Handle both array response and object with products property
+        const productsList = Array.isArray(data) ? data : (data.products || [])
+        
+        // Normalize product data
+        const normalizedProducts = productsList.map(product => ({
+          id: product.id,
+          name: product.name || '',
+          price: Number(product.current_price || product.price || 0),
+          originalPrice: Number(product.original_price || product.current_price || product.price || 0),
+          rating: Number(product.rating || 0),
+          reviews: Number(product.review_count || product.reviews || 0),
+          image: product.main_image || product.image_url || '',
+          badge: product.badge || null,
+          category: product.category || '',
+          slug: product.slug || product.id?.toString() || ''
+        }))
+
+        setTopRatedProducts(normalizedProducts)
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Error fetching top-rated products:', err)
+          // Set empty array on error so it doesn't break the UI
+          setTopRatedProducts([])
+        }
+      } finally {
+        setIsLoadingTopRated(false)
+      }
+    }
+
+    fetchTopRatedProducts()
+
+    return () => controller.abort()
+  }, [])
+
+  // Sort products based on selected option
+  const sortedProducts = [...products].sort((a, b) => {
+    if (sortBy === 'price-low') {
+      return a.price - b.price
+    } else if (sortBy === 'price-high') {
+      return b.price - a.price
+    }
+    return 0 // default sorting
+  })
+
+  // Filter products by price
+  const filteredProducts = sortedProducts.filter(product => product.price <= priceMax)
+
+  // Render stars for rating
+  const renderStars = (rating) => {
+    const roundedRating = Math.round(rating)
+    return Array.from({ length: 5 }, (_, i) => (
+      <span key={i} className={`star ${i < roundedRating ? 'filled' : ''}`}>★</span>
+    ))
+  }
+
+  // Get badge class
+  const getBadgeClass = (badge) => {
+    if (!badge) return ''
+    const badgeLower = badge.toLowerCase()
+    if (badgeLower.includes('new')) return 'badge-new'
+    if (badgeLower.includes('hot')) return 'badge-hot'
+    if (badgeLower.includes('sell') || badgeLower.includes('sale')) return 'badge-sell'
+    return 'badge-new'
+  }
+
+  // Format badge text
+  const getBadgeText = (badge) => {
+    if (!badge) return ''
+    const badgeLower = badge.toLowerCase()
+    if (badgeLower.includes('new')) return 'NEW'
+    if (badgeLower.includes('hot')) return 'HOT'
+    if (badgeLower.includes('sell') || badgeLower.includes('sale')) {
+      const discount = badge.match(/\d+/)?.[0]
+      return discount ? `SELL -${discount}%` : 'SELL'
+    }
+    return badge.toUpperCase()
   }
 
   return (
@@ -120,9 +282,18 @@ function ShopPage() {
                 <button className="view-btn active">▤</button>
                 <button className="view-btn">≣</button>
               </div>
-              <p className="shop-results">Showing 1-21 of 60 results</p>
+              <p className="shop-results">
+                {isLoading 
+                  ? 'Loading products...' 
+                  : `Showing 1-${Math.min(filteredProducts.length, 21)} of ${filteredProducts.length} results`
+                }
+              </p>
               <div className="shop-sort">
-                <select className="shop-sort-select" defaultValue="default">
+                <select 
+                  className="shop-sort-select" 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                >
                   <option value="default">Default Sorting</option>
                   <option value="price-low">Price: Low to High</option>
                   <option value="price-high">Price: High to Low</option>
@@ -131,358 +302,77 @@ function ShopPage() {
             </div>
 
             <div className="shop-products-grid">
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/red-hot-tomato')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={tomatoesImage} alt="Red Hot Tomato" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
+              {isLoading || !hasLoaded ? (
+                <div className="shop-loading">
+                  <div className="circular-progress">
+                    <svg className="circular-progress-svg" viewBox="0 0 100 100">
+                      <circle
+                        className="circular-progress-background"
+                        cx="50"
+                        cy="50"
+                        r="45"
+                      />
+                      <circle
+                        className="circular-progress-indicator"
+                        cx="50"
+                        cy="50"
+                        r="45"
+                      />
+                    </svg>
+                    <div className="circular-progress-content">
+                      <div className="circular-progress-spinner"></div>
+                    </div>
+                  </div>
+                  <p>Loading products...</p>
                 </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
+              ) : error ? (
+                <div className="shop-error">
+                  <p>Error loading products: {error}</p>
+                  <button onClick={() => window.location.reload()}>Retry</button>
                 </div>
-                <h3 className="product-name">Red Hot Tomato</h3>
-                <div className="product-price">
-                  <span className="current-price">₦118.26</span>
-                  <span className="original-price">₦162.00</span>
+              ) : filteredProducts.length === 0 ? (
+                <div className="shop-empty">
+                  <p>No products found matching your criteria.</p>
                 </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/vegetables-juices')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={juiceImage} alt="Vegetables Juices" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Vegetables Juices</h3>
-                <div className="product-price">
-                  <span className="current-price">₦68.00</span>
-                  <span className="original-price">₦85.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/orange-fresh-juice')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={orangeImage} alt="Orange Fresh Juice" className="product-image" />
-                  <span className="product-badge badge-hot">HOT</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Orange Fresh Juice</h3>
-                <div className="product-price">
-                  <span className="current-price">₦73.60</span>
-                  <span className="original-price">₦92.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/mix-berry-delight')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={fruitsComboImage} alt="Mix Berry Delight" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Mix Berry Delight</h3>
-                <div className="product-price">
-                  <span className="current-price">₦121.66</span>
-                  <span className="original-price">₦158.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/avocado')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={avocadoImage} alt="Avocado" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Avocado</h3>
-                <div className="product-price">
-                  <span className="current-price">₦68.00</span>
-                  <span className="original-price">₦85.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/guava')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={guavaImage} alt="Guava" className="product-image" />
-                  <span className="product-badge badge-hot">HOT</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Guava</h3>
-                <div className="product-price">
-                  <span className="current-price">₦73.60</span>
-                  <span className="original-price">₦92.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/masrom')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={masromImage} alt="Masrom" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Masrom</h3>
-                <div className="product-price">
-                  <span className="current-price">₦58.50</span>
-                  <span className="original-price">₦78.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/kiwi')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={kiwiImage} alt="Kiwi" className="product-image" />
-                  <span className="product-badge badge-sell">SELL -25%</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Kiwi</h3>
-                <div className="product-price">
-                  <span className="current-price">₦135.00</span>
-                  <span className="original-price">₦180.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/snacks-munchies-combo')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={snacksComboImage} alt="Snacks & Munchies Combo" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Snacks &amp; Munchies Combo</h3>
-                <div className="product-price">
-                  <span className="current-price">₦64.60</span>
-                  <span className="original-price">₦85.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/breakfast-essentials')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={breakfastImage} alt="Fresh Butter Cake" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Fresh Butter Cake</h3>
-                <div className="product-price">
-                  <span className="current-price">₦138.60</span>
-                  <span className="original-price">₦180.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/fresh-fruits-combo')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={fruitsComboImage} alt="Orange Sliced Mix" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Orange Sliced Mix</h3>
-                <div className="product-price">
-                  <span className="current-price">₦1,307</span>
-                  <span className="original-price">₦1,720</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/healthy-living-kit')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={healthKitImage} alt="Orange Sliced Mix" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Orange Sliced Mix</h3>
-                <div className="product-price">
-                  <span className="current-price">₦1,358</span>
-                  <span className="original-price">₦1,720</span>
-                </div>
-              </div>
-
-              {/* Additional Products */}
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/fresh-fruits-combo')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={fruitsComboImage} alt="Fresh Fruits Combo" className="product-image" />
-                  <span className="product-badge badge-sell">SALE</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Fresh Fruits Combo</h3>
-                <div className="product-price">
-                  <span className="current-price">₦129.60</span>
-                  <span className="original-price">₦162.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/vegetable-essentials-pack')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={vegetablePackImage} alt="Vegetable Essentials Pack" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Vegetable Essentials Pack</h3>
-                <div className="product-price">
-                  <span className="current-price">₦66.30</span>
-                  <span className="original-price">₦85.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/organic-staples-kit')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={staplesKitImage} alt="Organic Staples Mix" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Organic Staples Mix</h3>
-                <div className="product-price">
-                  <span className="current-price">₦121.66</span>
-                  <span className="original-price">₦158.00</span>
-                </div>
-              </div>
-
-              <div className="product-card" onClick={() => {
-                setNavigating(true)
-                navigate('/product/dairy-delight-pack')
-              }}>
-                <div className="product-image-wrapper">
-                  <img src={dairyPackImage} alt="Dairy Delight Pack" className="product-image" />
-                  <span className="product-badge badge-new">NEW</span>
-                </div>
-                <div className="product-rating">
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star filled">★</span>
-                  <span className="star">★</span>
-                  <span className="star">★</span>
-                </div>
-                <h3 className="product-name">Dairy Delight Pack</h3>
-                <div className="product-price">
-                  <span className="current-price">₦75.44</span>
-                  <span className="original-price">₦92.00</span>
-                </div>
-              </div>
+              ) : (
+                filteredProducts.map((product) => (
+                  <div 
+                    key={product.id} 
+                    className="product-card" 
+                    onClick={() => {
+                      setNavigating(true)
+                      navigate(`/product/${product.id}`)
+                    }}
+                  >
+                    <div className="product-image-wrapper">
+                      {product.image ? (
+                        <img src={product.image} alt={product.name} className="product-image" />
+                      ) : (
+                        <div className="product-image-placeholder">
+                          <svg width="60" height="60" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 1H3L3.4 3M5 11H15L19 3H3.4M5 11L3.4 3M5 11L2.70711 13.2929C2.07714 13.9229 2.52331 15 3.41421 15H15M15 15C13.8954 15 13 15.8954 13 17C13 18.1046 13.8954 19 15 19C16.1046 19 17 18.1046 17 17C17 15.8954 16.1046 15 15 15ZM7 17C7 18.1046 6.10457 19 5 19C3.89543 19 3 18.1046 3 17C3 15.8954 3.89543 15 5 15C6.10457 15 7 15.8954 7 17Z" stroke="#ccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                      )}
+                      {product.badge && (
+                        <span className={`product-badge ${getBadgeClass(product.badge)}`}>
+                          {getBadgeText(product.badge)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="product-rating">
+                      {renderStars(product.rating)}
+                    </div>
+                    <h3 className="product-name">{product.name}</h3>
+                    <div className="product-price">
+                      <span className="current-price">₦{product.price.toFixed(2)}</span>
+                      {product.originalPrice > product.price && (
+                        <span className="original-price">₦{product.originalPrice.toFixed(2)}</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -516,79 +406,68 @@ function ShopPage() {
 
             <div className="shop-sidebar-card">
               <h3 className="shop-sidebar-title">— Top Rated Product</h3>
-              <div className="shop-top-rated-list">
-                <div
-                  className="shop-top-rated-item"
-                  onClick={() => {
-                    setNavigating(true)
-                    navigate('/product/red-hot-tomato')
-                  }}
-                >
-                  <img src={tomatoesImage} alt="Red Hot Tomato" className="shop-top-rated-image" />
-                  <div className="shop-top-rated-info">
-                    <div className="shop-top-rated-rating">
-                      <span className="star filled">★</span>
-                      <span className="star filled">★</span>
-                      <span className="star filled">★</span>
-                      <span className="star filled">★</span>
-                      <span className="star">★</span>
-                    </div>
-                    <h4 className="shop-top-rated-name">Red Hot Tomato</h4>
-                    <div className="shop-top-rated-price">
-                      <span className="current-price">₦118.26</span>
-                      <span className="original-price">₦162.00</span>
+              {isLoadingTopRated ? (
+                <div className="shop-top-rated-loading">
+                  <div className="circular-progress" style={{ width: '60px', height: '60px', margin: '1rem auto' }}>
+                    <svg className="circular-progress-svg" viewBox="0 0 100 100">
+                      <circle
+                        className="circular-progress-background"
+                        cx="50"
+                        cy="50"
+                        r="45"
+                      />
+                      <circle
+                        className="circular-progress-indicator"
+                        cx="50"
+                        cy="50"
+                        r="45"
+                      />
+                    </svg>
+                    <div className="circular-progress-content">
+                      <div className="circular-progress-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
                     </div>
                   </div>
                 </div>
-
-                <div
-                  className="shop-top-rated-item"
-                  onClick={() => {
-                    setNavigating(true)
-                    navigate('/product/vegetables-juices')
-                  }}
-                >
-                  <img src={juiceImage} alt="Vegetables Juices" className="shop-top-rated-image" />
-                  <div className="shop-top-rated-info">
-                    <div className="shop-top-rated-rating">
-                      <span className="star filled">★</span>
-                      <span className="star filled">★</span>
-                      <span className="star filled">★</span>
-                      <span className="star filled">★</span>
-                      <span className="star">★</span>
+              ) : topRatedProducts.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#999', padding: '1rem', fontFamily: 'Jost, sans-serif', fontSize: '0.9rem' }}>
+                  No top-rated products available
+                </p>
+              ) : (
+                <div className="shop-top-rated-list">
+                  {topRatedProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className="shop-top-rated-item"
+                      onClick={() => {
+                        setNavigating(true)
+                        navigate(`/product/${product.id}`)
+                      }}
+                    >
+                      {product.image ? (
+                        <img src={product.image} alt={product.name} className="shop-top-rated-image" />
+                      ) : (
+                        <div className="shop-top-rated-image-placeholder">
+                          <svg width="40" height="40" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 1H3L3.4 3M5 11H15L19 3H3.4M5 11L3.4 3M5 11L2.70711 13.2929C2.07714 13.9229 2.52331 15 3.41421 15H15M15 15C13.8954 15 13 15.8954 13 17C13 18.1046 13.8954 19 15 19C16.1046 19 17 18.1046 17 17C17 15.8954 16.1046 15 15 15ZM7 17C7 18.1046 6.10457 19 5 19C3.89543 19 3 18.1046 3 17C3 15.8954 3.89543 15 5 15C6.10457 15 7 15.8954 7 17Z" stroke="#ccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                      )}
+                      <div className="shop-top-rated-info">
+                        <div className="shop-top-rated-rating">
+                          {renderStars(product.rating)}
+                        </div>
+                        <h4 className="shop-top-rated-name">{product.name}</h4>
+                        <div className="shop-top-rated-price">
+                          <span className="current-price">₦{product.price.toFixed(2)}</span>
+                          {product.originalPrice > product.price && (
+                            <span className="original-price">₦{product.originalPrice.toFixed(2)}</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <h4 className="shop-top-rated-name">Vegetables Juices</h4>
-                    <div className="shop-top-rated-price">
-                      <span className="current-price">₦68.00</span>
-                      <span className="original-price">₦85.00</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-
-                <div
-                  className="shop-top-rated-item"
-                  onClick={() => {
-                    setNavigating(true)
-                    navigate('/product/orange-fresh-juice')
-                  }}
-                >
-                  <img src={orangeImage} alt="Orange Fresh Juice" className="shop-top-rated-image" />
-                  <div className="shop-top-rated-info">
-                    <div className="shop-top-rated-rating">
-                      <span className="star filled">★</span>
-                      <span className="star filled">★</span>
-                      <span className="star filled">★</span>
-                      <span className="star filled">★</span>
-                      <span className="star">★</span>
-                    </div>
-                    <h4 className="shop-top-rated-name">Orange Fresh Juice</h4>
-                    <div className="shop-top-rated-price">
-                      <span className="current-price">₦73.60</span>
-                      <span className="original-price">₦92.00</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="shop-sidebar-card">

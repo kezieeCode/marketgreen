@@ -18,7 +18,7 @@ function OrdersPage() {
   const navigate = useNavigate()
   const { getCartItemCount } = useCart()
   const { setNavigating } = useNavigation()
-  const { token, isAuthenticated } = useAuth()
+  const { token, isAuthenticated, isLoading: authLoading } = useAuth()
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [orders, setOrders] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -27,55 +27,170 @@ function OrdersPage() {
   const [expandedOrder, setExpandedOrder] = useState(null)
 
   useEffect(() => {
+    // Wait for auth context to finish loading from localStorage
+    if (authLoading) {
+      return
+    }
+    
+    // Check authentication after loading is complete
     if (!isAuthenticated()) {
       navigate('/signup')
       return
     }
+    
+    // Only fetch orders if authenticated
     fetchOrders()
-  }, [token, isAuthenticated, navigate])
+  }, [token, isAuthenticated, navigate, authLoading])
 
   const fetchOrders = async () => {
     setIsLoading(true)
     setError(null)
     
-    // Disabled API calls - using mock data directly for now
-    // TODO: Enable when backend API is ready
-    setTimeout(() => {
-      setOrders(getMockOrders())
-      setIsLoading(false)
-    }, 500) // Small delay to simulate loading
+    // Get token directly from localStorage as fallback
+    const authToken = token || localStorage.getItem('token')
     
-    /* API calls disabled - uncomment when backend is ready
+    console.log('🛒 OrdersPage: Fetching orders from API...')
+    console.log('📍 API Endpoint:', API_ENDPOINTS.ORDERS.LIST)
+    console.log('🔑 Token from context:', token ? `${token.substring(0, 20)}...` : 'No token')
+    console.log('🔑 Token from localStorage:', authToken ? `${authToken.substring(0, 20)}...` : 'No token')
+    console.log('🔑 Final token being used:', authToken ? 'Token available' : 'NO TOKEN - This is the problem!')
+    
+    if (!authToken) {
+      console.error('❌ OrdersPage: No authentication token available!')
+      setError('Authentication required. Please log in again.')
+      setIsLoading(false)
+      navigate('/signup')
+      return
+    }
+    
     try {
+      const requestHeaders = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+      }
+      
+      console.log('📤 OrdersPage: Request Headers:', requestHeaders)
+      console.log('📤 OrdersPage: Making fetch request...')
+      
       const response = await fetch(API_ENDPOINTS.ORDERS.LIST, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        method: 'GET',
+        headers: requestHeaders,
+        // Removed credentials: 'include' - not needed for Bearer token auth
+        // and causes CORS issues when backend uses wildcard Access-Control-Allow-Origin
       })
 
+      console.log('📡 OrdersPage: Response received')
+      console.log('📊 Response Status:', response.status)
+      console.log('📋 Response Status Text:', response.statusText)
+      console.log('🔗 Response URL:', response.url)
+      console.log('📦 Response Headers:', Object.fromEntries(response.headers.entries()))
+      
+      // Check if response has content
+      const contentType = response.headers.get('content-type')
+      console.log('📄 Content-Type:', contentType)
+      
+      // Get response text first to see what we're actually getting
+      const responseText = await response.text()
+      console.log('📝 OrdersPage: Raw Response Text:', responseText)
+      console.log('📏 OrdersPage: Response Text Length:', responseText.length)
+
       if (!response.ok) {
+        console.warn('⚠️ OrdersPage: Response not OK')
+        console.warn('❌ Status:', response.status)
+        
         if (response.status === 401) {
+          console.warn('🔒 OrdersPage: Unauthorized - redirecting to signup')
+          setError('Session expired. Please log in again.')
           navigate('/signup')
           return
         }
-        throw new Error('Failed to fetch orders')
+        
+        // Try to parse error message
+        try {
+          const errorData = JSON.parse(responseText)
+          console.error('📄 OrdersPage: Error response data:', errorData)
+          setError(errorData.message || errorData.error || `Server error: ${response.status}`)
+        } catch (e) {
+          console.error('📄 OrdersPage: Could not parse error response as JSON')
+          console.error('📄 OrdersPage: Error response text:', responseText)
+          setError(`Server error: ${response.status} - ${response.statusText}`)
+        }
+        
+        setIsLoading(false)
+        return
       }
 
-      const data = await response.json()
-      const ordersList = Array.isArray(data) ? data : (data.orders || [])
+      // Parse JSON response
+      let data
+      try {
+        data = responseText ? JSON.parse(responseText) : null
+        console.log('✅ OrdersPage: Successfully parsed JSON response')
+        console.log('📦 OrdersPage: Parsed API Response:', data)
+        console.log('📊 OrdersPage: Response Type:', Array.isArray(data) ? 'Array' : typeof data)
+        
+        if (!data) {
+          console.warn('⚠️ OrdersPage: Response is null or empty')
+          setOrders([])
+          setIsLoading(false)
+          return
+        }
+      } catch (parseError) {
+        console.error('❌ OrdersPage: Failed to parse JSON response')
+        console.error('📄 OrdersPage: Parse error:', parseError)
+        console.error('📄 OrdersPage: Response text that failed to parse:', responseText)
+        setError('Invalid response format from server')
+        setIsLoading(false)
+        return
+      }
+      
+      // Extract orders list
+      let ordersList = []
+      if (Array.isArray(data)) {
+        ordersList = data
+        console.log('📋 OrdersPage: Response is an array')
+      } else if (data.orders && Array.isArray(data.orders)) {
+        ordersList = data.orders
+        console.log('📋 OrdersPage: Found orders array in response.orders')
+      } else if (data.data && Array.isArray(data.data)) {
+        ordersList = data.data
+        console.log('📋 OrdersPage: Found orders array in response.data')
+      } else if (data.results && Array.isArray(data.results)) {
+        ordersList = data.results
+        console.log('📋 OrdersPage: Found orders array in response.results')
+      } else {
+        console.warn('⚠️ OrdersPage: Unexpected response structure')
+        console.warn('📋 OrdersPage: Response keys:', Object.keys(data))
+        ordersList = []
+      }
+      
+      console.log('📋 OrdersPage: Processed Orders List:', ordersList)
+      console.log('🔢 OrdersPage: Number of orders:', ordersList.length)
+      
+      if (ordersList.length > 0) {
+        console.log('📝 OrdersPage: First order sample:', JSON.stringify(ordersList[0], null, 2))
+      } else {
+        console.warn('⚠️ OrdersPage: Orders list is empty!')
+        console.warn('📋 OrdersPage: This might be expected if user has no orders')
+      }
+      
       setOrders(ordersList)
     } catch (err) {
-      console.error('Error fetching orders:', err)
-      setOrders(getMockOrders())
+      console.error('❌ OrdersPage: Error fetching orders:', err)
+      console.error('📋 OrdersPage: Error details:', {
+        name: err.name,
+        message: err.message,
+        stack: err.stack
+      })
+      setError(`Failed to fetch orders: ${err.message}`)
     } finally {
       setIsLoading(false)
+      console.log('🏁 OrdersPage: Fetch completed')
     }
-    */
   }
 
   // Mock orders for demo purposes
   const getMockOrders = () => {
+    const now = Date.now()
     return [
       {
         id: 1,
@@ -86,10 +201,20 @@ function OrdersPage() {
         shipping_amount: 450.00,
         tax_amount: 0,
         discount_amount: 0,
-        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
         payment_method: 'paystack',
         payment_status: 'paid',
         reference: 'REF-12345',
+        tracking_number: 'TRK-789456123',
+        estimated_delivery: new Date(now - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        delivered_at: new Date(now - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        timeline: [
+          { status: 'ordered', date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(), completed: true },
+          { status: 'confirmed', date: new Date(now - 2 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(), completed: true },
+          { status: 'processing', date: new Date(now - 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000).toISOString(), completed: true },
+          { status: 'shipped', date: new Date(now - 1.5 * 24 * 60 * 60 * 1000).toISOString(), completed: true },
+          { status: 'delivered', date: new Date(now - 1 * 24 * 60 * 60 * 1000).toISOString(), completed: true }
+        ],
         items: [
           {
             product: { name: 'Fresh Fruits Combo', image_url: fruitsComboImage, price: 118.26 },
@@ -120,10 +245,19 @@ function OrdersPage() {
         shipping_amount: 500.00,
         tax_amount: 0,
         discount_amount: 0,
-        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date(now - 5 * 24 * 60 * 60 * 1000).toISOString(),
         payment_method: 'paystack',
         payment_status: 'paid',
         reference: 'REF-12346',
+        tracking_number: 'TRK-456789321',
+        estimated_delivery: new Date(now + 1 * 24 * 60 * 60 * 1000).toISOString(),
+        timeline: [
+          { status: 'ordered', date: new Date(now - 5 * 24 * 60 * 60 * 1000).toISOString(), completed: true },
+          { status: 'confirmed', date: new Date(now - 5 * 24 * 60 * 60 * 1000 + 1 * 60 * 60 * 1000).toISOString(), completed: true },
+          { status: 'processing', date: new Date(now - 4 * 24 * 60 * 60 * 1000).toISOString(), completed: true },
+          { status: 'shipped', date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(), completed: true },
+          { status: 'delivered', date: null, completed: false }
+        ],
         items: [
           {
             product: { name: 'Dairy Pack', image_url: dairyPackImage, price: 58.50 },
@@ -149,9 +283,18 @@ function OrdersPage() {
         shipping_amount: 500.00,
         tax_amount: 0,
         discount_amount: 0,
-        created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date(now - 1 * 24 * 60 * 60 * 1000).toISOString(),
         payment_method: 'cash_on_delivery',
         payment_status: 'pending',
+        tracking_number: null,
+        estimated_delivery: new Date(now + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        timeline: [
+          { status: 'ordered', date: new Date(now - 1 * 24 * 60 * 60 * 1000).toISOString(), completed: true },
+          { status: 'confirmed', date: null, completed: false },
+          { status: 'processing', date: null, completed: false },
+          { status: 'shipped', date: null, completed: false },
+          { status: 'delivered', date: null, completed: false }
+        ],
         items: [
           {
             product: { name: 'Staples Kit', image_url: staplesKitImage, price: 73.60 },
@@ -255,6 +398,81 @@ function OrdersPage() {
     } catch {
       return dateString
     }
+  }
+
+  const formatDeliveryDate = (dateString) => {
+    if (!dateString) return 'N/A'
+    try {
+      const date = new Date(dateString)
+      const today = new Date()
+      const diffTime = date - today
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      
+      if (diffDays < 0) {
+        return `Delivered on ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+      } else if (diffDays === 0) {
+        return 'Today'
+      } else if (diffDays === 1) {
+        return 'Tomorrow'
+      } else {
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      }
+    } catch {
+      return dateString
+    }
+  }
+
+  const getTimelineSteps = (order) => {
+    const defaultSteps = [
+      { label: 'Ordered', key: 'ordered' },
+      { label: 'Confirmed', key: 'confirmed' },
+      { label: 'Processing', key: 'processing' },
+      { label: 'Shipped', key: 'shipped' },
+      { label: 'Delivered', key: 'delivered' }
+    ]
+
+    if (order.timeline && Array.isArray(order.timeline)) {
+      return defaultSteps.map(step => {
+        const timelineItem = order.timeline.find(t => t.status === step.key)
+        return {
+          ...step,
+          completed: timelineItem?.completed || false,
+          date: timelineItem?.date || null
+        }
+      })
+    }
+
+    // Fallback: determine from status
+    const statusLower = order.status?.toLowerCase() || ''
+    return defaultSteps.map((step, index) => {
+      let completed = false
+      if (statusLower.includes('completed') || statusLower.includes('delivered')) {
+        completed = true
+      } else if (statusLower.includes('shipped')) {
+        completed = index < 4
+      } else if (statusLower.includes('processing')) {
+        completed = index < 3
+      } else if (statusLower.includes('confirmed')) {
+        completed = index < 2
+      } else if (statusLower.includes('pending') || statusLower.includes('ordered')) {
+        completed = index < 1
+      }
+      return { ...step, completed, date: null }
+    })
+  }
+
+  const handleTrackPackage = (trackingNumber) => {
+    if (!trackingNumber) {
+      alert('Tracking number not available yet. It will be assigned once your order is shipped.')
+      return
+    }
+    // In a real app, this would open a tracking page or external tracking service
+    // For now, we'll show an alert with the tracking number
+    window.open(`https://tracking.example.com/${trackingNumber}`, '_blank')
   }
 
   const filteredOrders = filterStatus === 'all' 
@@ -449,6 +667,91 @@ function OrdersPage() {
 
                   {expandedOrder === (order.id || order.order_id) && (
                     <div className="order-card-details">
+                      {/* Tracking Section */}
+                      <div className="order-tracking-section">
+                        <div className="order-tracking-header">
+                          <h4 className="order-details-title">Order Tracking</h4>
+                          {order.tracking_number && (
+                            <button 
+                              className="track-package-btn"
+                              onClick={() => handleTrackPackage(order.tracking_number)}
+                            >
+                              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 2L3 7V17C3 17.5304 3.21071 18.0391 3.58579 18.4142C3.96086 18.7893 4.46957 19 5 19H15C15.5304 19 16.0391 18.7893 16.4142 18.4142C16.7893 18.0391 17 17.5304 17 17V7L10 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M10 2V10L17 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                              Track Package
+                            </button>
+                          )}
+                        </div>
+                        
+                        {order.tracking_number ? (
+                          <div className="tracking-number-display">
+                            <span className="tracking-label">Tracking Number:</span>
+                            <span className="tracking-number">{order.tracking_number}</span>
+                            <button 
+                              className="copy-tracking-btn"
+                              onClick={() => {
+                                navigator.clipboard.writeText(order.tracking_number)
+                                alert('Tracking number copied to clipboard!')
+                              }}
+                              title="Copy tracking number"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 3C7.44772 3 7 3.44772 7 4C7 4.55228 7.44772 5 8 5H12C12.5523 5 13 4.55228 13 4C13 3.44772 12.5523 3 12 3H8Z" fill="currentColor"/>
+                                <path d="M6 4C6 2.89543 6.89543 2 8 2H12C13.1046 2 14 2.89543 14 4V6H16C17.1046 6 18 6.89543 18 8V16C18 17.1046 17.1046 18 16 18H8C6.89543 18 6 17.1046 6 16V14H4C2.89543 14 2 13.1046 2 12V4C2 2.89543 2.89543 2 4 2H6V4Z" fill="currentColor"/>
+                              </svg>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="tracking-number-display no-tracking">
+                            <span className="tracking-label">Tracking Number:</span>
+                            <span className="tracking-number">Not available yet</span>
+                            <span className="tracking-note">Tracking number will be assigned once your order is shipped</span>
+                          </div>
+                        )}
+
+                        {order.estimated_delivery && (
+                          <div className="estimated-delivery">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M15 2H5C3.89543 2 3 2.89543 3 4V16C3 17.1046 3.89543 18 5 18H15C16.1046 18 17 17.1046 17 16V4C17 2.89543 16.1046 2 15 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M13 1V4M7 1V4M3 7H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <div className="delivery-info">
+                              <span className="delivery-label">Estimated Delivery:</span>
+                              <span className="delivery-date">{formatDeliveryDate(order.estimated_delivery)}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Delivery Timeline */}
+                        <div className="delivery-timeline">
+                          {getTimelineSteps(order).map((step, index) => (
+                            <div key={step.key} className={`timeline-step ${step.completed ? 'completed' : ''} ${index === getTimelineSteps(order).length - 1 ? 'last' : ''}`}>
+                              <div className="timeline-marker">
+                                {step.completed ? (
+                                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="10" cy="10" r="8" fill="#4CAF50"/>
+                                    <path d="M6 10L9 13L14 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                ) : (
+                                  <div className="timeline-marker-pending"></div>
+                                )}
+                              </div>
+                              <div className="timeline-content">
+                                <div className="timeline-label">{step.label}</div>
+                                {step.date && (
+                                  <div className="timeline-date">{formatDate(step.date)}</div>
+                                )}
+                              </div>
+                              {index < getTimelineSteps(order).length - 1 && (
+                                <div className={`timeline-line ${step.completed ? 'completed' : ''}`}></div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
                       <div className="order-details-section">
                         <h4 className="order-details-title">Order Items</h4>
                         <div className="order-items-list">
