@@ -41,6 +41,15 @@ function WishlistPage() {
   const fetchWishlist = async () => {
     setIsLoading(true)
     setError(null)
+    
+    // Disabled API calls - using mock data directly for now
+    // TODO: Enable when backend API is ready
+    setTimeout(() => {
+      setWishlistItems(getMockWishlistItems())
+      setIsLoading(false)
+    }, 500) // Small delay to simulate loading
+    
+    /* API calls disabled - uncomment when backend is ready
     try {
       const response = await fetch(API_ENDPOINTS.WISHLIST.LIST, {
         headers: {
@@ -54,7 +63,6 @@ function WishlistPage() {
           navigate('/signup')
           return
         }
-        // If endpoint doesn't exist, use mock data for demo
         if (response.status === 404) {
           setWishlistItems(getMockWishlistItems())
           setIsLoading(false)
@@ -68,11 +76,11 @@ function WishlistPage() {
       setWishlistItems(itemsList)
     } catch (err) {
       console.error('Error fetching wishlist:', err)
-      // Use mock data if API fails
       setWishlistItems(getMockWishlistItems())
     } finally {
       setIsLoading(false)
     }
+    */
   }
 
   // Mock wishlist items for demo
@@ -222,6 +230,11 @@ function WishlistPage() {
   }
 
   const removeFromWishlist = async (itemId) => {
+    // Disabled API calls - just update local state for now
+    // TODO: Enable when backend API is ready
+    setWishlistItems(wishlistItems.filter(item => item.id !== itemId))
+    
+    /* API calls disabled - uncomment when backend is ready
     try {
       const response = await fetch(API_ENDPOINTS.WISHLIST.REMOVE(itemId), {
         method: 'DELETE',
@@ -234,14 +247,13 @@ function WishlistPage() {
       if (response.ok) {
         setWishlistItems(wishlistItems.filter(item => item.id !== itemId))
       } else {
-        // Update locally even if API fails
         setWishlistItems(wishlistItems.filter(item => item.id !== itemId))
       }
     } catch (err) {
       console.error('Error removing from wishlist:', err)
-      // Update locally even if API fails
       setWishlistItems(wishlistItems.filter(item => item.id !== itemId))
     }
+    */
   }
 
   const handleAddToCart = (item) => {

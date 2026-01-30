@@ -56,8 +56,7 @@ function UserMenuDropdown() {
       ),
       onClick: () => {
         setIsOpen(false)
-        // Navigate to account page when created
-        console.log('My Account clicked')
+        navigate('/account')
       }
     },
     {

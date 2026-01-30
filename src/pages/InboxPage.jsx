@@ -34,6 +34,15 @@ function InboxPage() {
   const fetchMessages = async () => {
     setIsLoading(true)
     setError(null)
+    
+    // Disabled API calls - using mock data directly for now
+    // TODO: Enable when backend API is ready
+    setTimeout(() => {
+      setMessages(getMockMessages())
+      setIsLoading(false)
+    }, 500) // Small delay to simulate loading
+    
+    /* API calls disabled - uncomment when backend is ready
     try {
       const response = await fetch(API_ENDPOINTS.INBOX.LIST, {
         headers: {
@@ -47,7 +56,6 @@ function InboxPage() {
           navigate('/signup')
           return
         }
-        // If endpoint doesn't exist, use mock data for demo
         if (response.status === 404) {
           setMessages(getMockMessages())
           setIsLoading(false)
@@ -61,11 +69,11 @@ function InboxPage() {
       setMessages(messagesList)
     } catch (err) {
       console.error('Error fetching messages:', err)
-      // Use mock data if API fails
       setMessages(getMockMessages())
     } finally {
       setIsLoading(false)
     }
+    */
   }
 
   // Mock messages for demo purposes
@@ -242,6 +250,13 @@ function InboxPage() {
   }
 
   const markAsRead = async (messageId) => {
+    // Disabled API calls - just update local state for now
+    // TODO: Enable when backend API is ready
+    setMessages(messages.map(msg => 
+      msg.id === messageId ? { ...msg, is_read: true } : msg
+    ))
+    
+    /* API calls disabled - uncomment when backend is ready
     try {
       const response = await fetch(API_ENDPOINTS.INBOX.MARK_READ(messageId), {
         method: 'PUT',
@@ -258,11 +273,11 @@ function InboxPage() {
       }
     } catch (err) {
       console.error('Error marking message as read:', err)
-      // Update locally even if API fails
       setMessages(messages.map(msg => 
         msg.id === messageId ? { ...msg, is_read: true } : msg
       ))
     }
+    */
   }
 
   const handleMessageClick = (message) => {

@@ -48,6 +48,11 @@ export const API_ENDPOINTS = {
     LIST: `${API_BASE_URL}/api/wishlist`,
     ADD: `${API_BASE_URL}/api/wishlist`,
     REMOVE: (id) => `${API_BASE_URL}/api/wishlist/${id}`
+  },
+  ACCOUNT: {
+    UPDATE: `${API_BASE_URL}/api/account`,
+    CHANGE_PASSWORD: `${API_BASE_URL}/api/account/change-password`,
+    PREFERENCES: `${API_BASE_URL}/api/account/preferences`
   }
 }
 

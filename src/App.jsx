@@ -59,6 +59,7 @@ import OrdersPage from './pages/OrdersPage.jsx'
 import InboxPage from './pages/InboxPage.jsx'
 import VoucherPage from './pages/VoucherPage.jsx'
 import WishlistPage from './pages/WishlistPage.jsx'
+import AccountPage from './pages/AccountPage.jsx'
 
 function HomePage() {
   const navigate = useNavigate()
@@ -1287,6 +1288,7 @@ function App() {
         <Route path="/inbox" element={<InboxPage />} />
         <Route path="/voucher" element={<VoucherPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/account" element={<AccountPage />} />
       </Routes>
     </>
   )

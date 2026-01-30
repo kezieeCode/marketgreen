@@ -8,6 +8,10 @@ import UserMenuDropdown from '../components/UserMenuDropdown.jsx'
 import { API_ENDPOINTS } from '../config/api.js'
 import logo from '../assets/images/logo.png'
 import backgroundMenuImage from '../assets/images/pictures/background-menu.png'
+import fruitsComboImage from '../assets/images/products/fruits.png'
+import vegetablePackImage from '../assets/images/products/vegies.png'
+import dairyPackImage from '../assets/images/products/milk.png'
+import staplesKitImage from '../assets/images/products/grains.png'
 import './OrdersPage.css'
 
 function OrdersPage() {
@@ -33,6 +37,15 @@ function OrdersPage() {
   const fetchOrders = async () => {
     setIsLoading(true)
     setError(null)
+    
+    // Disabled API calls - using mock data directly for now
+    // TODO: Enable when backend API is ready
+    setTimeout(() => {
+      setOrders(getMockOrders())
+      setIsLoading(false)
+    }, 500) // Small delay to simulate loading
+    
+    /* API calls disabled - uncomment when backend is ready
     try {
       const response = await fetch(API_ENDPOINTS.ORDERS.LIST, {
         headers: {
@@ -50,15 +63,112 @@ function OrdersPage() {
       }
 
       const data = await response.json()
-      // Handle both array and object with orders property
       const ordersList = Array.isArray(data) ? data : (data.orders || [])
       setOrders(ordersList)
     } catch (err) {
       console.error('Error fetching orders:', err)
-      setError(err.message)
+      setOrders(getMockOrders())
     } finally {
       setIsLoading(false)
     }
+    */
+  }
+
+  // Mock orders for demo purposes
+  const getMockOrders = () => {
+    return [
+      {
+        id: 1,
+        order_id: 'ORD-12345',
+        status: 'completed',
+        total_amount: 15450.00,
+        subtotal: 15000.00,
+        shipping_amount: 450.00,
+        tax_amount: 0,
+        discount_amount: 0,
+        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        payment_method: 'paystack',
+        payment_status: 'paid',
+        reference: 'REF-12345',
+        items: [
+          {
+            product: { name: 'Fresh Fruits Combo', image_url: fruitsComboImage, price: 118.26 },
+            quantity: 2,
+            price: 118.26
+          },
+          {
+            product: { name: 'Vegetable Pack', image_url: vegetablePackImage, price: 68.00 },
+            quantity: 1,
+            price: 68.00
+          }
+        ],
+        shipping_address: {
+          full_name: 'John Doe',
+          street: '123 Main Street',
+          city: 'Lagos',
+          state: 'Lagos',
+          country: 'Nigeria',
+          phone: '+234 123 456 7890'
+        }
+      },
+      {
+        id: 2,
+        order_id: 'ORD-12346',
+        status: 'shipped',
+        total_amount: 8500.00,
+        subtotal: 8000.00,
+        shipping_amount: 500.00,
+        tax_amount: 0,
+        discount_amount: 0,
+        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        payment_method: 'paystack',
+        payment_status: 'paid',
+        reference: 'REF-12346',
+        items: [
+          {
+            product: { name: 'Dairy Pack', image_url: dairyPackImage, price: 58.50 },
+            quantity: 3,
+            price: 58.50
+          }
+        ],
+        shipping_address: {
+          full_name: 'John Doe',
+          street: '123 Main Street',
+          city: 'Lagos',
+          state: 'Lagos',
+          country: 'Nigeria',
+          phone: '+234 123 456 7890'
+        }
+      },
+      {
+        id: 3,
+        order_id: 'ORD-12347',
+        status: 'pending',
+        total_amount: 12500.00,
+        subtotal: 12000.00,
+        shipping_amount: 500.00,
+        tax_amount: 0,
+        discount_amount: 0,
+        created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        payment_method: 'cash_on_delivery',
+        payment_status: 'pending',
+        items: [
+          {
+            product: { name: 'Staples Kit', image_url: staplesKitImage, price: 73.60 },
+            quantity: 1,
+            price: 73.60
+          }
+        ],
+        shipping_address: {
+          full_name: 'John Doe',
+          street: '123 Main Street',
+          city: 'Lagos',
+          state: 'Lagos',
+          country: 'Nigeria',
+          phone: '+234 123 456 7890'
+        }
+      }
+    ]
   }
 
   const handleNavigateHome = (e) => {

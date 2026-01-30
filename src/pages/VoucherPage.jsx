@@ -33,6 +33,15 @@ function VoucherPage() {
   const fetchVouchers = async () => {
     setIsLoading(true)
     setError(null)
+    
+    // Disabled API calls - using mock data directly for now
+    // TODO: Enable when backend API is ready
+    setTimeout(() => {
+      setVouchers(getMockVouchers())
+      setIsLoading(false)
+    }, 500) // Small delay to simulate loading
+    
+    /* API calls disabled - uncomment when backend is ready
     try {
       const response = await fetch(API_ENDPOINTS.VOUCHERS.LIST, {
         headers: {
@@ -46,7 +55,6 @@ function VoucherPage() {
           navigate('/signup')
           return
         }
-        // If endpoint doesn't exist, use mock data for demo
         if (response.status === 404) {
           setVouchers(getMockVouchers())
           setIsLoading(false)
@@ -60,11 +68,11 @@ function VoucherPage() {
       setVouchers(vouchersList)
     } catch (err) {
       console.error('Error fetching vouchers:', err)
-      // Use mock data if API fails
       setVouchers(getMockVouchers())
     } finally {
       setIsLoading(false)
     }
+    */
   }
 
   // Mock vouchers for demo purposes
@@ -221,6 +229,14 @@ function VoucherPage() {
     e.preventDefault()
     if (!redeemCode.trim()) return
 
+    // Disabled API calls - just show success message for now
+    // TODO: Enable when backend API is ready
+    setRedeemCode('')
+    setShowRedeemForm(false)
+    fetchVouchers() // Refresh vouchers list (will use mock data)
+    alert('Voucher redeemed successfully! (Demo mode)')
+    
+    /* API calls disabled - uncomment when backend is ready
     try {
       const response = await fetch(API_ENDPOINTS.VOUCHERS.REDEEM, {
         method: 'POST',
@@ -235,7 +251,7 @@ function VoucherPage() {
         const data = await response.json()
         setRedeemCode('')
         setShowRedeemForm(false)
-        fetchVouchers() // Refresh vouchers list
+        fetchVouchers()
         alert('Voucher redeemed successfully!')
       } else {
         const error = await response.json()
@@ -245,6 +261,7 @@ function VoucherPage() {
       console.error('Error redeeming voucher:', err)
       alert('Failed to redeem voucher. Please try again.')
     }
+    */
   }
 
   const getVoucherColor = (category) => {
