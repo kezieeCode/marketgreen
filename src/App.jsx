@@ -55,6 +55,10 @@ import SignUpPage from './pages/SignUpPage.jsx'
 import PaymentSuccessPage from './pages/PaymentSuccessPage.jsx'
 import PaymentFailedPage from './pages/PaymentFailedPage.jsx'
 import PaymentErrorPage from './pages/PaymentErrorPage.jsx'
+import OrdersPage from './pages/OrdersPage.jsx'
+import InboxPage from './pages/InboxPage.jsx'
+import VoucherPage from './pages/VoucherPage.jsx'
+import WishlistPage from './pages/WishlistPage.jsx'
 
 function HomePage() {
   const navigate = useNavigate()
@@ -1279,6 +1283,10 @@ function App() {
         <Route path="/payment/success" element={<PaymentSuccessPage />} />
         <Route path="/payment/failed" element={<PaymentFailedPage />} />
         <Route path="/payment/error" element={<PaymentErrorPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/inbox" element={<InboxPage />} />
+        <Route path="/voucher" element={<VoucherPage />} />
+        <Route path="/wishlist" element={<WishlistPage />} />
       </Routes>
     </>
   )

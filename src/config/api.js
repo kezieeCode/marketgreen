@@ -29,6 +29,25 @@ export const API_ENDPOINTS = {
     INITIALIZE: `${PAYMENTS_BASE_URL}/api/payments/initialize`,
     VERIFY: (reference) => `${PAYMENTS_BASE_URL}/api/payments/verify/${encodeURIComponent(reference)}`,
     CREATE_ORDER: `${PAYMENTS_BASE_URL}/api/payments/create-order`
+  },
+  ORDERS: {
+    LIST: `${API_BASE_URL}/api/orders`,
+    DETAIL: (id) => `${API_BASE_URL}/api/orders/${id}`
+  },
+  INBOX: {
+    LIST: `${API_BASE_URL}/api/inbox`,
+    DETAIL: (id) => `${API_BASE_URL}/api/inbox/${id}`,
+    MARK_READ: (id) => `${API_BASE_URL}/api/inbox/${id}/read`
+  },
+  VOUCHERS: {
+    LIST: `${API_BASE_URL}/api/vouchers`,
+    DETAIL: (id) => `${API_BASE_URL}/api/vouchers/${id}`,
+    REDEEM: `${API_BASE_URL}/api/vouchers/redeem`
+  },
+  WISHLIST: {
+    LIST: `${API_BASE_URL}/api/wishlist`,
+    ADD: `${API_BASE_URL}/api/wishlist`,
+    REMOVE: (id) => `${API_BASE_URL}/api/wishlist/${id}`
   }
 }
 

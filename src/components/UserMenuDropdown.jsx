@@ -69,8 +69,7 @@ function UserMenuDropdown() {
       ),
       onClick: () => {
         setIsOpen(false)
-        // Navigate to orders page when created
-        console.log('Orders clicked')
+        navigate('/orders')
       }
     },
     {
@@ -82,8 +81,7 @@ function UserMenuDropdown() {
       ),
       onClick: () => {
         setIsOpen(false)
-        // Navigate to inbox page when created
-        console.log('Inbox clicked')
+        navigate('/inbox')
       }
     },
     {
@@ -95,8 +93,7 @@ function UserMenuDropdown() {
       ),
       onClick: () => {
         setIsOpen(false)
-        // Navigate to wishlist page when created
-        console.log('Wishlist clicked')
+        navigate('/wishlist')
       }
     },
     {
@@ -108,8 +105,7 @@ function UserMenuDropdown() {
       ),
       onClick: () => {
         setIsOpen(false)
-        // Navigate to voucher page when created
-        console.log('Voucher clicked')
+        navigate('/voucher')
       }
     },
     {

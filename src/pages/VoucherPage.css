@@ -1,0 +1,709 @@
+/* Voucher Page Styles */
+.voucher-page {
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+/* Voucher Hero Section */
+.voucher-hero {
+  position: relative;
+  padding: 4rem 2rem;
+  background-color: #061b12;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.voucher-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--voucher-bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.voucher-hero-overlay {
+  position: relative;
+  z-index: 1;
+}
+
+.voucher-hero-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.voucher-hero-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.voucher-hero-subtitle {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #b7ff5b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.voucher-hero-title {
+  font-family: 'Jost', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.voucher-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.9rem;
+  color: #cfd8dc;
+}
+
+.voucher-breadcrumbs a {
+  color: #ffffff;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.voucher-breadcrumbs a:hover {
+  color: #b7ff5b;
+}
+
+.breadcrumb-separator {
+  opacity: 0.7;
+}
+
+/* Voucher Content */
+.voucher-content {
+  padding: 3rem 2rem 4rem;
+  background-color: #F5F5DC;
+  min-height: 60vh;
+}
+
+.voucher-content-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Redeem Section */
+.voucher-redeem-section {
+  margin-bottom: 2.5rem;
+}
+
+.voucher-redeem-card {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
+  color: #ffffff;
+}
+
+.voucher-redeem-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.voucher-redeem-icon {
+  font-size: 3rem;
+  flex-shrink: 0;
+}
+
+.voucher-redeem-title {
+  font-family: 'Jost', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: #ffffff;
+}
+
+.voucher-redeem-subtitle {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.95rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.voucher-redeem-toggle-btn {
+  padding: 0.75rem 2rem;
+  background-color: #ffffff;
+  color: #4CAF50;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Jost', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.voucher-redeem-toggle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.voucher-redeem-form {
+  margin-top: 1rem;
+}
+
+.voucher-redeem-input-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.voucher-redeem-input {
+  flex: 1;
+  padding: 0.875rem 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.95);
+  font-family: 'Jost', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.voucher-redeem-input:focus {
+  border-color: #ffffff;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.voucher-redeem-input::placeholder {
+  color: #999;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.voucher-redeem-submit-btn,
+.voucher-redeem-cancel-btn {
+  padding: 0.875rem 1.5rem;
+  border: 2px solid #ffffff;
+  border-radius: 8px;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.voucher-redeem-submit-btn {
+  background-color: #ffffff;
+  color: #4CAF50;
+}
+
+.voucher-redeem-submit-btn:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-2px);
+}
+
+.voucher-redeem-cancel-btn {
+  background-color: transparent;
+  color: #ffffff;
+}
+
+.voucher-redeem-cancel-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Voucher Tabs */
+.voucher-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  background-color: #ffffff;
+  padding: 0.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.voucher-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border: 2px solid transparent;
+  background-color: transparent;
+  border-radius: 8px;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.voucher-tab:hover {
+  color: #4CAF50;
+  background-color: #f0f8f0;
+}
+
+.voucher-tab.active {
+  background-color: #4CAF50;
+  color: #ffffff;
+  border-color: #4CAF50;
+}
+
+.voucher-tab-icon {
+  font-size: 1.2rem;
+}
+
+.voucher-tab-badge {
+  padding: 0.25rem 0.75rem;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.voucher-tab.active .voucher-tab-badge {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Vouchers Grid */
+.vouchers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+/* Voucher Card */
+.voucher-card {
+  position: relative;
+  background: linear-gradient(135deg, var(--voucher-color, #4CAF50) 0%, rgba(76, 175, 80, 0.8) 100%);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.voucher-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.voucher-card.expiring-soon {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+  50% {
+    box-shadow: 0 4px 30px rgba(255, 152, 0, 0.4);
+  }
+}
+
+.voucher-card.used,
+.voucher-card.expired {
+  opacity: 0.7;
+  background: linear-gradient(135deg, #999 0%, #777 100%);
+}
+
+.voucher-card-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.05) 10px,
+      rgba(255, 255, 255, 0.05) 20px
+    );
+  pointer-events: none;
+}
+
+.voucher-card-content {
+  position: relative;
+  z-index: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: #ffffff;
+}
+
+.voucher-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.voucher-card-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.voucher-card-status-badge {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.status-available,
+.status-used,
+.status-expired {
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-available {
+  background-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.status-used {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.status-expired {
+  background-color: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.voucher-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.voucher-card-title {
+  font-family: 'Jost', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+}
+
+.voucher-card-description {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.95rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.6;
+}
+
+.voucher-card-code-section {
+  background-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+}
+
+.voucher-code-label {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.75rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.voucher-code-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.voucher-code {
+  font-family: 'Courier New', monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffffff;
+  flex: 1;
+}
+
+.voucher-copy-btn {
+  background-color: rgba(255, 255, 255, 0.3);
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  color: #ffffff;
+}
+
+.voucher-copy-btn:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+.voucher-card-discount {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.voucher-discount-amount {
+  font-family: 'Jost', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
+}
+
+.voucher-discount-label {
+  font-family: 'Jost', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.voucher-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.voucher-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.voucher-detail-item svg {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.voucher-use-btn {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #ffffff;
+  color: var(--voucher-color, #4CAF50);
+  border: none;
+  border-radius: 8px;
+  font-family: 'Jost', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.voucher-use-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Voucher Loading */
+.voucher-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1.5rem;
+}
+
+.voucher-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f0f0f0;
+  border-top-color: #4CAF50;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.voucher-loading p {
+  font-family: 'Jost', sans-serif;
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Voucher Error */
+.voucher-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.voucher-error h3 {
+  font-family: 'Jost', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.voucher-error p {
+  font-family: 'Jost', sans-serif;
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
+}
+
+.voucher-retry-btn {
+  padding: 0.75rem 2rem;
+  background-color: #4CAF50;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.voucher-retry-btn:hover {
+  background-color: #45a049;
+}
+
+/* Voucher Empty */
+.voucher-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.voucher-empty-icon {
+  font-size: 5rem;
+  opacity: 0.5;
+}
+
+.voucher-empty h3 {
+  font-family: 'Jost', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.voucher-empty p {
+  font-family: 'Jost', sans-serif;
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
+  max-width: 500px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .voucher-hero-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .vouchers-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .voucher-hero {
+    padding: 3rem 1.5rem;
+  }
+
+  .voucher-hero-title {
+    font-size: 2.4rem;
+  }
+
+  .voucher-content {
+    padding: 2rem 1.5rem 3rem;
+  }
+
+  .voucher-redeem-card {
+    padding: 1.5rem;
+  }
+
+  .voucher-redeem-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .voucher-redeem-input-group {
+    flex-direction: column;
+  }
+
+  .voucher-redeem-input,
+  .voucher-redeem-submit-btn,
+  .voucher-redeem-cancel-btn {
+    width: 100%;
+  }
+
+  .voucher-tabs {
+    flex-direction: column;
+  }
+
+  .voucher-tab {
+    width: 100%;
+  }
+
+  .vouchers-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .voucher-card {
+    min-height: auto;
+  }
+}
