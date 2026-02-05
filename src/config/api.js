@@ -44,15 +44,32 @@ export const API_ENDPOINTS = {
     DETAIL: (id) => `${API_BASE_URL}/api/vouchers/${id}`,
     REDEEM: `${API_BASE_URL}/api/vouchers/redeem`
   },
+  COUPONS: {
+    LIST: (active = true) => `${API_BASE_URL}/api/coupons${active ? '?active=true' : ''}`,
+    APPLY: `${API_BASE_URL}/api/coupons/apply`
+  },
   WISHLIST: {
     LIST: `${API_BASE_URL}/api/wishlist`,
     ADD: `${API_BASE_URL}/api/wishlist`,
     REMOVE: (id) => `${API_BASE_URL}/api/wishlist/${id}`
   },
   ACCOUNT: {
-    UPDATE: `${API_BASE_URL}/api/account`,
-    CHANGE_PASSWORD: `${API_BASE_URL}/api/account/change-password`,
+    UPDATE: `${API_BASE_URL}/api/users/profile`,
+    CHANGE_PASSWORD: `${API_BASE_URL}/api/users/change-password`,
     PREFERENCES: `${API_BASE_URL}/api/account/preferences`
+  },
+  PROMOTIONS: {
+    GET: `${API_BASE_URL}/api/promotions`
+  },
+  REVIEWS: {
+    CREATE: `${API_BASE_URL}/api/reviews`
+  },
+  CART: {
+    LIST: `${API_BASE_URL}/api/cart`,
+    ADD: `${API_BASE_URL}/api/cart`,
+    UPDATE: (itemId) => `${API_BASE_URL}/api/cart/${itemId}`,
+    REMOVE: (itemId) => `${API_BASE_URL}/api/cart/${itemId}`,
+    CLEAR: `${API_BASE_URL}/api/cart`
   }
 }
 

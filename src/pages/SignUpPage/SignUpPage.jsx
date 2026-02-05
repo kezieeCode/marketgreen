@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
-import '../App.css'
-import logo from '../assets/images/logo.png'
-import { API_ENDPOINTS } from '../config/api.js'
+import { useAuth } from '../../context/AuthContext.jsx'
+import '../../App.css'
+import logo from '../../assets/images/logo.png'
+import { API_ENDPOINTS } from '../../config/api.js'
 
 function SignUpPage() {
   const navigate = useNavigate()
@@ -18,6 +18,8 @@ function SignUpPage() {
   const [formData, setFormData] = useState({
     email: '',
     username: '',
+    fullName: '',
+    phoneNumber: '',
     password: ''
   })
 
@@ -53,7 +55,7 @@ function SignUpPage() {
     setFieldErrors({})
 
     // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:46',message:'Frontend - signup request initiated',data:{apiEndpoint:API_ENDPOINTS.AUTH.SIGNUP,hasEmail:!!formData.email,hasUsername:!!formData.username,hasPassword:!!formData.password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:46',message:'Frontend - signup request initiated',data:{apiEndpoint:API_ENDPOINTS.AUTH.SIGNUP,hasEmail:!!formData.email,hasUsername:!!formData.username,hasFullName:!!formData.fullName,hasPhoneNumber:!!formData.phoneNumber,hasPassword:!!formData.password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
     // #endregion
 
     try {
@@ -67,6 +69,8 @@ function SignUpPage() {
         body: JSON.stringify({
           email: formData.email,
           username: formData.username,
+          fullName: formData.fullName,
+          phoneNumber: formData.phoneNumber,
           password: formData.password,
           marketingEmails: marketingEmails
         })
@@ -264,22 +268,60 @@ function SignUpPage() {
               </div>
 
               {!isLogin && (
-                <div className="signup-field-group">
-                  <label htmlFor="username" className="signup-label">Username</label>
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    className={`signup-input ${fieldErrors.username ? 'signup-input-error' : ''}`}
-                    value={formData.username}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isLoading}
-                  />
-                  {fieldErrors.username && (
-                    <span className="signup-field-error">{fieldErrors.username}</span>
-                  )}
-                </div>
+                <>
+                  <div className="signup-field-group">
+                    <label htmlFor="fullName" className="signup-label">Full Name</label>
+                    <input
+                      type="text"
+                      id="fullName"
+                      name="fullName"
+                      className={`signup-input ${fieldErrors.fullName ? 'signup-input-error' : ''}`}
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                      required
+                      disabled={isLoading}
+                      placeholder="Enter your full name"
+                    />
+                    {fieldErrors.fullName && (
+                      <span className="signup-field-error">{fieldErrors.fullName}</span>
+                    )}
+                  </div>
+
+                  <div className="signup-field-group">
+                    <label htmlFor="phoneNumber" className="signup-label">Phone Number</label>
+                    <input
+                      type="tel"
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      className={`signup-input ${fieldErrors.phoneNumber ? 'signup-input-error' : ''}`}
+                      value={formData.phoneNumber}
+                      onChange={handleInputChange}
+                      required
+                      disabled={isLoading}
+                      placeholder="Enter your phone number"
+                    />
+                    {fieldErrors.phoneNumber && (
+                      <span className="signup-field-error">{fieldErrors.phoneNumber}</span>
+                    )}
+                  </div>
+
+                  <div className="signup-field-group">
+                    <label htmlFor="username" className="signup-label">Username</label>
+                    <input
+                      type="text"
+                      id="username"
+                      name="username"
+                      className={`signup-input ${fieldErrors.username ? 'signup-input-error' : ''}`}
+                      value={formData.username}
+                      onChange={handleInputChange}
+                      required
+                      disabled={isLoading}
+                    />
+                    {fieldErrors.username && (
+                      <span className="signup-field-error">{fieldErrors.username}</span>
+                    )}
+                  </div>
+                </>
               )}
 
               <div className="signup-field-group">

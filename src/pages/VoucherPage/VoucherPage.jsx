@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
-import { useCart } from '../context/CartContext.jsx'
-import CartDropdown from '../components/CartDropdown.jsx'
-import UserMenuDropdown from '../components/UserMenuDropdown.jsx'
-import { API_ENDPOINTS } from '../config/api.js'
-import logo from '../assets/images/logo.png'
-import backgroundMenuImage from '../assets/images/pictures/background-menu.png'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { useCart } from '../../context/CartContext.jsx'
+import CartDropdown from '../../components/CartDropdown.jsx'
+import UserMenuDropdown from '../../components/UserMenuDropdown.jsx'
+import { API_ENDPOINTS, API_BASE_URL } from '../../config/api.js'
+import logo from '../../assets/images/logo.png'
+import backgroundMenuImage from '../../assets/images/pictures/background-menu.png'
 import './VoucherPage.css'
 
 function VoucherPage() {
   const navigate = useNavigate()
-  const { getCartItemCount } = useCart()
+  const { getCartItemCount, getCartTotal } = useCart()
   const { token, isAuthenticated } = useAuth()
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [vouchers, setVouchers] = useState([])
@@ -34,143 +34,109 @@ function VoucherPage() {
     setIsLoading(true)
     setError(null)
     
-    // Disabled API calls - using mock data directly for now
-    // TODO: Enable when backend API is ready
-    setTimeout(() => {
-      setVouchers(getMockVouchers())
-      setIsLoading(false)
-    }, 500) // Small delay to simulate loading
-    
-    /* API calls disabled - uncomment when backend is ready
     try {
-      const response = await fetch(API_ENDPOINTS.VOUCHERS.LIST, {
+      // Use the API endpoint from config
+      const url = API_ENDPOINTS.COUPONS.LIST(true)
+      
+      // Validate URL
+      if (!url || !url.startsWith('http')) {
+        throw new Error('Invalid API URL configuration')
+      }
+      
+      console.log('Fetching vouchers from:', url)
+      
+      const response = await fetch(url, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
       })
 
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API Error Response:', response.status, errorText)
+        
         if (response.status === 401) {
           navigate('/signup')
           return
         }
-        if (response.status === 404) {
-          setVouchers(getMockVouchers())
-          setIsLoading(false)
-          return
+        
+        // Try to parse error message
+        let errorMessage = 'Failed to fetch vouchers'
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.message || errorData.error || errorMessage
+        } catch {
+          errorMessage = errorText || `Server error: ${response.status} ${response.statusText}`
         }
-        throw new Error('Failed to fetch vouchers')
+        
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
-      const vouchersList = Array.isArray(data) ? data : (data.vouchers || [])
-      setVouchers(vouchersList)
+      console.log('Vouchers API Response:', data)
+      
+      const coupons = Array.isArray(data.coupons) ? data.coupons : []
+      
+      // Map API response to UI format
+      const mappedVouchers = coupons.map(coupon => {
+        const now = new Date()
+        const validFrom = coupon.validFrom ? new Date(coupon.validFrom) : null
+        const validUntil = coupon.validUntil ? new Date(coupon.validUntil) : null
+        const isExpired = validUntil ? validUntil < now : false
+        const isValid = validFrom ? validFrom <= now : true
+        
+        // Determine status
+        let status = 'available'
+        if (isExpired) {
+          status = 'expired'
+        } else if (!isValid) {
+          status = 'available' // Not yet valid, but we'll show it
+        }
+        
+        // Generate title from code or description
+        const title = coupon.code || 'Special Offer'
+        
+        // Determine category based on discount type or code
+        let category = 'special'
+        if (coupon.code) {
+          const codeUpper = coupon.code.toUpperCase()
+          if (codeUpper.includes('WELCOME')) category = 'welcome'
+          else if (codeUpper.includes('LOYALTY')) category = 'loyalty'
+          else if (codeUpper.includes('SALE') || codeUpper.includes('WEEKEND')) category = 'sale'
+          else if (coupon.discountType === 'percentage') category = 'product'
+          else category = 'special'
+        }
+        
+        return {
+          id: coupon.id,
+          code: coupon.code,
+          title: title,
+          description: coupon.description || `${coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `₦${coupon.discountValue}`} off`,
+          discount_type: coupon.discountType === 'percentage' ? 'percentage' : 'fixed',
+          discount_value: coupon.discountValue,
+          min_purchase: coupon.minOrderAmount || 0,
+          max_discount: coupon.maxDiscountAmount || null,
+          valid_from: coupon.validFrom || null,
+          valid_until: coupon.validUntil || null,
+          status: status,
+          is_used: false, // API doesn't provide this, assume not used
+          category: category
+        }
+      })
+      
+      setVouchers(mappedVouchers)
     } catch (err) {
       console.error('Error fetching vouchers:', err)
-      setVouchers(getMockVouchers())
+      setError(err.message || 'Failed to load vouchers. Please try again later.')
+      // Fallback to empty array on error
+      setVouchers([])
     } finally {
       setIsLoading(false)
     }
-    */
   }
 
-  // Mock vouchers for demo purposes
-  const getMockVouchers = () => {
-    return [
-      {
-        id: 1,
-        code: 'WELCOME25',
-        title: 'Welcome Bonus',
-        description: 'Get 25% off on your first order',
-        discount_type: 'percentage',
-        discount_value: 25,
-        min_purchase: 1000,
-        max_discount: 5000,
-        valid_from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'available',
-        is_used: false,
-        category: 'welcome'
-      },
-      {
-        id: 2,
-        code: 'FRESH50',
-        title: 'Fresh Produce Special',
-        description: '₦500 off on fresh fruits and vegetables',
-        discount_type: 'fixed',
-        discount_value: 500,
-        min_purchase: 2000,
-        max_discount: 500,
-        valid_from: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        valid_until: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'available',
-        is_used: false,
-        category: 'product'
-      },
-      {
-        id: 3,
-        code: 'WEEKEND30',
-        title: 'Weekend Sale',
-        description: '30% off on all items this weekend',
-        discount_type: 'percentage',
-        discount_value: 30,
-        min_purchase: 1500,
-        max_discount: 3000,
-        valid_from: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        valid_until: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'available',
-        is_used: false,
-        category: 'sale'
-      },
-      {
-        id: 4,
-        code: 'LOYALTY100',
-        title: 'Loyalty Reward',
-        description: '₦1000 off as a thank you for being a loyal customer',
-        discount_type: 'fixed',
-        discount_value: 1000,
-        min_purchase: 5000,
-        max_discount: 1000,
-        valid_from: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        valid_until: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'available',
-        is_used: false,
-        category: 'loyalty'
-      },
-      {
-        id: 5,
-        code: 'SPRING20',
-        title: 'Spring Special',
-        description: '20% off on your order',
-        discount_type: 'percentage',
-        discount_value: 20,
-        min_purchase: 800,
-        max_discount: 2000,
-        valid_from: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-        valid_until: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'expired',
-        is_used: false,
-        category: 'seasonal'
-      },
-      {
-        id: 6,
-        code: 'BIRTHDAY15',
-        title: 'Birthday Special',
-        description: '₦1500 off on your birthday order',
-        discount_type: 'fixed',
-        discount_value: 1500,
-        min_purchase: 3000,
-        max_discount: 1500,
-        valid_from: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        valid_until: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'used',
-        is_used: true,
-        used_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        category: 'special'
-      }
-    ]
-  }
 
   const handleNavigateHome = (e) => {
     e.preventDefault()
@@ -227,41 +193,50 @@ function VoucherPage() {
 
   const handleRedeem = async (e) => {
     e.preventDefault()
-    if (!redeemCode.trim()) return
+    if (!redeemCode.trim()) {
+      alert('Please enter a voucher code')
+      return
+    }
 
-    // Disabled API calls - just show success message for now
-    // TODO: Enable when backend API is ready
-    setRedeemCode('')
-    setShowRedeemForm(false)
-    fetchVouchers() // Refresh vouchers list (will use mock data)
-    alert('Voucher redeemed successfully! (Demo mode)')
-    
-    /* API calls disabled - uncomment when backend is ready
     try {
-      const response = await fetch(API_ENDPOINTS.VOUCHERS.REDEEM, {
+      const orderAmount = getCartTotal() || 0
+      
+      const response = await fetch(API_ENDPOINTS.COUPONS.APPLY, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
-        body: JSON.stringify({ code: redeemCode.trim() }),
+        body: JSON.stringify({
+          code: redeemCode.trim().toUpperCase(),
+          orderAmount: orderAmount
+        }),
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setRedeemCode('')
-        setShowRedeemForm(false)
-        fetchVouchers()
-        alert('Voucher redeemed successfully!')
-      } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to redeem voucher')
+      if (!response.ok) {
+        const errorText = await response.text()
+        let errorMessage = 'Failed to redeem voucher'
+        
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.message || errorData.error || errorMessage
+        } catch {
+          errorMessage = errorText || `Server error: ${response.status} ${response.statusText}`
+        }
+        
+        alert(errorMessage)
+        return
       }
+
+      const data = await response.json()
+      setRedeemCode('')
+      setShowRedeemForm(false)
+      fetchVouchers() // Refresh vouchers list
+      alert('Voucher applied successfully!')
     } catch (err) {
       console.error('Error redeeming voucher:', err)
       alert('Failed to redeem voucher. Please try again.')
     }
-    */
   }
 
   const getVoucherColor = (category) => {

@@ -8,7 +8,7 @@
 /* Header Styles */
 .header {
   background-color: #ffffff;
-  padding: 1rem 0;
+  padding: 0.375rem 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
@@ -32,7 +32,7 @@
 }
 
 .logo img {
-  height: 40px;
+  height: 85px;
   width: auto;
 }
 
@@ -650,6 +650,55 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.product-price-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.wishlist-icon-btn {
+  background-color: transparent;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.wishlist-icon-btn:hover {
+  border-color: #e91e63;
+  transform: scale(1.1);
+  color: #e91e63;
+  background-color: rgba(233, 30, 99, 0.1);
+}
+
+.wishlist-icon-btn.active {
+  color: #e91e63;
+  border-color: #e91e63;
+  background-color: rgba(233, 30, 99, 0.1);
+}
+
+.wishlist-icon-btn.active svg {
+  fill: #e91e63;
+}
+
+.wishlist-icon-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wishlist-icon-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 .product-image {
@@ -2977,7 +3026,7 @@
 }
 
 .signup-logo {
-  height: 40px;
+  height: 70px;
   width: auto;
 }
 
@@ -3228,7 +3277,7 @@
 @media (max-width: 768px) {
   /* Mobile Header */
   .header {
-    padding: 0.75rem 0;
+    padding: 0.25rem 0;
   }
 
   .header-container {
@@ -3243,7 +3292,7 @@
   }
 
   .logo img {
-    height: 32px;
+    height: 65px;
   }
 
   .logo-text {
@@ -3724,7 +3773,7 @@
   }
 
   .mobile-drawer-header .logo img {
-    height: 32px;
+    height: 48px;
   }
 
   .mobile-drawer-header .logo-text {

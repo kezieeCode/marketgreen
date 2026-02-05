@@ -47,6 +47,13 @@
   grid-template-columns: 400px 1fr 350px;
   gap: 2rem;
   position: relative;
+  align-items: start;
+}
+
+.product-info-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .product-images-section {
@@ -353,8 +360,8 @@
 
 /* Product Tabs Section */
 .product-tabs-section {
-  grid-column: 1 / 3;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
+  width: 100%;
 }
 
 /* Hot Sales Banner Inline - In Sidebar */
@@ -440,6 +447,187 @@
 .reviews-content {
   padding: 2rem 0;
   color: #666;
+}
+
+.reviews-section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+.review-form-section {
+  background-color: #f9f9f9;
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 3rem;
+  border: 1px solid #e0e0e0;
+}
+
+.review-form-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.review-login-prompt {
+  padding: 1rem;
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  color: #856404;
+}
+
+.review-login-prompt a {
+  color: #4CAF50;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.review-login-prompt a:hover {
+  text-decoration: underline;
+}
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.review-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.review-form-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.star-rating-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.star-rating-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #ddd;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s, transform 0.2s;
+  line-height: 1;
+}
+
+.star-rating-btn:hover {
+  transform: scale(1.1);
+}
+
+.star-rating-btn.active {
+  color: #FFD700;
+}
+
+.rating-text {
+  font-size: 0.95rem;
+  color: #666;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.review-form-input,
+.review-form-textarea {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.3s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.review-form-input:focus,
+.review-form-textarea:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.review-form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.review-char-count {
+  font-size: 0.85rem;
+  color: #999;
+  text-align: right;
+  margin-top: 0.25rem;
+}
+
+.review-error-message {
+  padding: 0.75rem;
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  color: #c33;
+  font-size: 0.9rem;
+}
+
+.review-success-message {
+  padding: 0.75rem;
+  background-color: #efe;
+  border: 1px solid #4CAF50;
+  border-radius: 8px;
+  color: #4CAF50;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.review-submit-btn {
+  padding: 0.875rem 2rem;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  align-self: flex-start;
+}
+
+.review-submit-btn:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.review-submit-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.reviews-list-section {
+  margin-top: 2rem;
+}
+
+.reviews-list-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+.reviews-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #999;
+  background-color: #f9f9f9;
+  border-radius: 8px;
 }
 
 /* Sidebar */
@@ -745,12 +933,19 @@
   margin: 0.5rem 0;
 }
 
+.related-product-price-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
 .related-product-price {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.5rem;
 }
 
 .related-product-price .current-price {

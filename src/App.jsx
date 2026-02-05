@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { useCart } from './context/CartContext.jsx'
 import { useNavigation } from './context/NavigationContext.jsx'
+import { useAuth } from './context/AuthContext.jsx'
 import CartDropdown from './components/CartDropdown.jsx'
 import UserMenuDropdown from './components/UserMenuDropdown.jsx'
 import NavigationLoader from './components/NavigationLoader.jsx'
 import './App.css'
-import ProductDetail from './pages/ProductDetail.jsx'
+import ProductDetail from './pages/ProductDetail/ProductDetail.jsx'
 import { API_ENDPOINTS } from './config/api.js'
 import logo from './assets/images/logo.png'
 import fruitsImage from './assets/images/pictures/fruits.png'
@@ -47,24 +48,25 @@ import deliveryIcon from './assets/images/vector/delivery.png'
 import handmadeIcon from './assets/images/vector/handmade.png'
 import naturalIcon from './assets/images/vector/natural.png'
 import paymentImage from './assets/images/vector/payment.png'
-import ShopPage from './pages/ShopPage.jsx'
-import CheckoutPage from './pages/CheckoutPage.jsx'
-import AboutPage from './pages/AboutPage.jsx'
-import ContactPage from './pages/ContactPage.jsx'
-import SignUpPage from './pages/SignUpPage.jsx'
-import PaymentSuccessPage from './pages/PaymentSuccessPage.jsx'
-import PaymentFailedPage from './pages/PaymentFailedPage.jsx'
-import PaymentErrorPage from './pages/PaymentErrorPage.jsx'
-import OrdersPage from './pages/OrdersPage.jsx'
-import InboxPage from './pages/InboxPage.jsx'
-import VoucherPage from './pages/VoucherPage.jsx'
-import WishlistPage from './pages/WishlistPage.jsx'
-import AccountPage from './pages/AccountPage.jsx'
+import ShopPage from './pages/ShopPage/ShopPage.jsx'
+import CheckoutPage from './pages/CheckoutPage/CheckoutPage.jsx'
+import AboutPage from './pages/AboutPage/AboutPage.jsx'
+import ContactPage from './pages/ContactPage/ContactPage.jsx'
+import SignUpPage from './pages/SignUpPage/SignUpPage.jsx'
+import PaymentSuccessPage from './pages/PaymentSuccessPage/PaymentSuccessPage.jsx'
+import PaymentFailedPage from './pages/PaymentFailedPage/PaymentFailedPage.jsx'
+import PaymentErrorPage from './pages/PaymentErrorPage/PaymentErrorPage.jsx'
+import OrdersPage from './pages/OrdersPage/OrdersPage.jsx'
+import InboxPage from './pages/InboxPage/InboxPage.jsx'
+import VoucherPage from './pages/VoucherPage/VoucherPage.jsx'
+import WishlistPage from './pages/WishlistPage/WishlistPage.jsx'
+import AccountPage from './pages/AccountPage/AccountPage.jsx'
 
 function HomePage() {
   const navigate = useNavigate()
   const { getCartItemCount } = useCart()
   const { setNavigating } = useNavigation()
+  const { token, isAuthenticated } = useAuth()
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [timeLeft, setTimeLeft] = useState({
     days: 676,
@@ -78,6 +80,10 @@ function HomePage() {
   const [isLoadingTrendy, setIsLoadingTrendy] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('vegetables')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [promotion, setPromotion] = useState(null)
+  const [isLoadingPromotion, setIsLoadingPromotion] = useState(false)
+  const [wishlistItems, setWishlistItems] = useState([])
+  const [addingToWishlist, setAddingToWishlist] = useState(null)
 
   // Prevent body scroll when mobile drawer is open
   useEffect(() => {
@@ -91,33 +97,86 @@ function HomePage() {
     }
   }, [isMobileMenuOpen])
 
+  // Fetch promotion data
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        let { days, hours, minutes, seconds } = prev
+    const controller = new AbortController()
+
+    async function fetchPromotion() {
+      try {
+        setIsLoadingPromotion(true)
+        const url = API_ENDPOINTS.PROMOTIONS.GET
+        console.log('🔍 Fetching promotion from URL:', url)
         
-        if (seconds > 0) {
-          seconds--
-        } else if (minutes > 0) {
-          minutes--
-          seconds = 59
-        } else if (hours > 0) {
-          hours--
-          minutes = 59
-          seconds = 59
-        } else if (days > 0) {
-          days--
-          hours = 23
-          minutes = 59
-          seconds = 59
+        const response = await fetch(url, {
+          signal: controller.signal
+        })
+
+        console.log('📡 Promotion API Response Status:', response.status, response.statusText)
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('❌ Promotion API Error:', response.status, errorText)
+          throw new Error(`Failed to load promotion: ${response.status}`)
         }
+
+        const data = await response.json()
+        console.log('✅ Promotion API Full Response:', JSON.stringify(data, null, 2))
+        console.log('📦 Promotion object:', data.promotion)
         
-        return { days, hours, minutes, seconds }
-      })
-    }, 1000)
+        if (data.promotion) {
+          console.log('✅ Setting promotion state with:', JSON.stringify(data.promotion, null, 2))
+          setPromotion(data.promotion)
+        } else {
+          console.warn('⚠️ No promotion found in response. Full response structure:', data)
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Error fetching promotion', error)
+        }
+      } finally {
+        setIsLoadingPromotion(false)
+      }
+    }
+
+    fetchPromotion()
+
+    return () => controller.abort()
+  }, [])
+
+  // Update countdown timer based on promotion
+  useEffect(() => {
+    console.log('⏰ Countdown useEffect triggered. Current promotion:', promotion)
+    
+    if (!promotion?.countdownEndDate) {
+      console.log('⚠️ No countdownEndDate in promotion, skipping countdown setup')
+      return
+    }
+
+    const endDate = new Date(promotion.countdownEndDate)
+    console.log('⏰ Setting up countdown timer. End date:', endDate, 'Current date:', new Date())
+    
+    const updateCountdown = () => {
+      const now = new Date()
+      const diff = endDate - now
+      
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+        return
+      }
+      
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+      
+      setTimeLeft({ days, hours, minutes, seconds })
+    }
+    
+    updateCountdown()
+    const timer = setInterval(updateCountdown, 1000)
 
     return () => clearInterval(timer)
-  }, [])
+  }, [promotion])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -184,6 +243,94 @@ function HomePage() {
 
     return () => controller.abort()
   }, [selectedCategory])
+
+  // Fetch wishlist items
+  useEffect(() => {
+    if (!isAuthenticated() || !token) return
+
+    async function fetchWishlist() {
+      try {
+        const response = await fetch(API_ENDPOINTS.WISHLIST.LIST, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const itemsList = Array.isArray(data) ? data : (data.items || data.wishlist || [])
+          setWishlistItems(itemsList.map(item => item.product_id || item.product?.id || item.id))
+        }
+      } catch (err) {
+        console.error('Error fetching wishlist:', err)
+      }
+    }
+
+    fetchWishlist()
+  }, [token, isAuthenticated])
+
+  const handleAddToWishlist = async (e, product) => {
+    e.stopPropagation() // Prevent navigation to product page
+
+    if (!isAuthenticated()) {
+      navigate('/signup')
+      return
+    }
+
+    const productId = product.id
+    const isInWishlist = wishlistItems.includes(productId)
+
+    setAddingToWishlist(productId)
+
+    try {
+      if (isInWishlist) {
+        // Remove from wishlist
+        const wishlistItem = await fetch(API_ENDPOINTS.WISHLIST.LIST, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }).then(res => res.json())
+        
+        const itemToRemove = Array.isArray(wishlistItem) 
+          ? wishlistItem.find(item => (item.product_id || item.product?.id || item.id) === productId)
+          : (wishlistItem.items || wishlistItem.wishlist || []).find(item => (item.product_id || item.product?.id || item.id) === productId)
+
+        if (itemToRemove) {
+          const response = await fetch(API_ENDPOINTS.WISHLIST.REMOVE(itemToRemove.id || itemToRemove.wishlist_id), {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
+          })
+
+          if (response.ok) {
+            setWishlistItems(prev => prev.filter(id => id !== productId))
+          }
+        }
+      } else {
+        // Add to wishlist
+        const response = await fetch(API_ENDPOINTS.WISHLIST.ADD, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+          body: JSON.stringify({ product_id: productId }),
+        })
+
+        if (response.ok) {
+          setWishlistItems(prev => [...prev, productId])
+        }
+      }
+    } catch (err) {
+      console.error('Error updating wishlist:', err)
+    } finally {
+      setAddingToWishlist(null)
+    }
+  }
 
   const handleCategoryClick = (e, category) => {
     e.preventDefault()
@@ -254,7 +401,7 @@ function HomePage() {
               {getCartItemCount() > 0 && <span className="cart-badge">{getCartItemCount()}</span>}
             </button>
             <CartDropdown isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-            <button className="shop-now-btn">SHOP NOW</button>
+            <button className="shop-now-btn" onClick={() => navigate('/shop')}>SHOP NOW</button>
           </div>
         </div>
       </header>
@@ -276,7 +423,7 @@ function HomePage() {
                 Enjoy hassle-free online grocery shopping with fast delivery and the best quality products
               </p>
             </div>
-            <button className="explore-btn">EXPLORE PRODUCTS</button>
+            <button className="explore-btn" onClick={() => navigate('/shop')}>EXPLORE PRODUCTS</button>
           </div>
           
           <div className="hero-image-container">
@@ -334,7 +481,7 @@ function HomePage() {
               <div className="category-content">
                 <h2 className="category-title">FRESH PRODUCE</h2>
                 <p className="category-description">FRUITS, VEGETABLES, AND ORGANIC FARM-FRESH ITEMS.</p>
-                <button className="category-shop-btn">SHOP NOW</button>
+                <button className="category-shop-btn" onClick={() => navigate('/shop')}>SHOP NOW</button>
               </div>
               <div className="category-image-wrapper">
                 <img src={fruityImage} alt="Fresh Produce" className="category-image" />
@@ -345,7 +492,7 @@ function HomePage() {
               <div className="category-content">
                 <h2 className="category-title">DAIRY & EGGS</h2>
                 <p className="category-description">MILK, CHEESE, YOGURT, BUTTER, AND FRESH EGGS.</p>
-                <button className="category-shop-btn">SHOP NOW</button>
+                <button className="category-shop-btn" onClick={() => navigate('/shop')}>SHOP NOW</button>
               </div>
               <div className="category-image-wrapper">
                 <img src={diaryImage} alt="Dairy & Eggs" className="category-image" />
@@ -359,7 +506,7 @@ function HomePage() {
               <div className="category-content">
                 <h2 className="category-title">STAPLES & ESSENTIALS</h2>
                 <p className="category-description">RICE, FLOUR, PULSES, SPICES, AND COOKING OILS.</p>
-                <button className="category-shop-btn">SHOP NOW</button>
+                <button className="category-shop-btn" onClick={() => navigate('/shop')}>SHOP NOW</button>
               </div>
               <div className="category-image-wrapper">
                 <img src={staplesImage} alt="Staples & Essentials" className="category-image" />
@@ -370,7 +517,7 @@ function HomePage() {
               <div className="category-content">
                 <h2 className="category-title">SNACKS & BEVERAGES</h2>
                 <p className="category-description">CHIPS, BISCUITS, SOFT DRINKS, JUICES, AND TEA/COFFEE.</p>
-                <button className="category-shop-btn">SHOP NOW</button>
+                <button className="category-shop-btn" onClick={() => navigate('/shop')}>SHOP NOW</button>
               </div>
               <div className="category-image-wrapper">
                 <img src={snacksImage} alt="Snacks & Beverages" className="category-image" />
@@ -381,7 +528,7 @@ function HomePage() {
               <div className="category-content">
                 <h2 className="category-title">HOUSEHOLD & PERSONAL CARE</h2>
                 <p className="category-description">CLEANING SUPPLIES & HYGIENE PRODUCTS.</p>
-                <button className="category-shop-btn">SHOP NOW</button>
+                <button className="category-shop-btn" onClick={() => navigate('/shop')}>SHOP NOW</button>
               </div>
               <div className="category-image-wrapper">
                 <img src={householdImage} alt="Household & Personal Care" className="category-image" />
@@ -486,13 +633,32 @@ function HomePage() {
                       ))}
                     </div>
                     <h3 className="product-name">{product.name}</h3>
-                    <div className="product-price">
-                      <span className="current-price">
-                        {Number.isFinite(price) ? `₦${price.toFixed(2)}` : ''}
-                      </span>
-                      {Number.isFinite(originalPrice) && originalPrice > price && (
-                        <span className="original-price">₦{originalPrice.toFixed(2)}</span>
-                      )}
+                    <div className="product-price-wrapper">
+                      <div className="product-price">
+                        <span className="current-price">
+                          {Number.isFinite(price) ? `₦${price.toFixed(2)}` : ''}
+                        </span>
+                        {Number.isFinite(originalPrice) && originalPrice > price && (
+                          <span className="original-price">₦{originalPrice.toFixed(2)}</span>
+                        )}
+                      </div>
+                      <button
+                        className={`wishlist-icon-btn ${wishlistItems.includes(product.id) ? 'active' : ''}`}
+                        onClick={(e) => handleAddToWishlist(e, product)}
+                        disabled={addingToWishlist === product.id}
+                        title={wishlistItems.includes(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path 
+                            d="M10 17.5L3.5 11C1.5 9 1.5 5.5 3.5 3.5C5.5 1.5 9 1.5 11 3.5L10 4.5L9 3.5C11 1.5 14.5 1.5 16.5 3.5C18.5 5.5 18.5 9 16.5 11L10 17.5Z" 
+                            stroke="currentColor" 
+                            strokeWidth="1.5" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round"
+                            fill={wishlistItems.includes(product.id) ? 'currentColor' : 'none'}
+                          />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 )
@@ -507,48 +673,74 @@ function HomePage() {
       </section>
 
       {/* Hot Deal Section */}
-      <section className="hot-deal">
-        <div className="hot-deal-container">
-          <div className="hot-deal-image-wrapper">
-            <img src={honeyImage} alt="Honey Combo Package" className="hot-deal-image" />
-          </div>
-          
-          <div className="hot-deal-content">
-            <p className="hot-deal-label">// Todays Hot Deals</p>
-            <p className="hot-deal-stock">ORIGINAL STOCK</p>
-            <h2 className="hot-deal-title">HONEY COMBO PACKAGE</h2>
-            
-            <div className="countdown-timer">
-              <div className="timer-item">
-                <div className="timer-circle">
-                  <span className="timer-number">{String(timeLeft.days).padStart(3, '0')}</span>
-                </div>
-                <span className="timer-label">DAYS</span>
-              </div>
-              <div className="timer-item">
-                <div className="timer-circle">
-                  <span className="timer-number">{String(timeLeft.hours).padStart(2, '0')}</span>
-                </div>
-                <span className="timer-label">HRS</span>
-              </div>
-              <div className="timer-item">
-                <div className="timer-circle">
-                  <span className="timer-number">{String(timeLeft.minutes).padStart(2, '0')}</span>
-                </div>
-                <span className="timer-label">MINS</span>
-              </div>
-              <div className="timer-item">
-                <div className="timer-circle">
-                  <span className="timer-number">{String(timeLeft.seconds).padStart(2, '0')}</span>
-                </div>
-                <span className="timer-label">SECS</span>
-              </div>
+      {(() => {
+        console.log('🎨 Hot Deal Render Check - isLoadingPromotion:', isLoadingPromotion, 'promotion:', promotion)
+        return !isLoadingPromotion && promotion && (
+        <section 
+          className="hot-deal" 
+          style={{ 
+            backgroundColor: promotion.backgroundColor || '#FEF3C7',
+            backgroundImage: promotion.backgroundImage ? `url(${promotion.backgroundImage})` : undefined
+          }}
+        >
+          <div className="hot-deal-container">
+            <div className="hot-deal-image-wrapper">
+              <img 
+                src={promotion.productImage || honeyImage} 
+                alt={promotion.mainTitle || "Hot Deal"} 
+                className="hot-deal-image" 
+              />
             </div>
             
-            <button className="hot-deal-btn">SHOP NOW</button>
+            <div className="hot-deal-content">
+              <p className="hot-deal-label">{promotion.headerText || "// Todays Hot Deals"}</p>
+              <p className="hot-deal-stock">{promotion.subtitle || "ORIGINAL STOCK"}</p>
+              <h2 className="hot-deal-title">{promotion.mainTitle || "HONEY COMBO PACKAGE"}</h2>
+              
+              <div className="countdown-timer">
+                <div className="timer-item">
+                  <div className="timer-circle">
+                    <span className="timer-number">{String(timeLeft.days).padStart(3, '0')}</span>
+                  </div>
+                  <span className="timer-label">DAYS</span>
+                </div>
+                <div className="timer-item">
+                  <div className="timer-circle">
+                    <span className="timer-number">{String(timeLeft.hours).padStart(2, '0')}</span>
+                  </div>
+                  <span className="timer-label">HRS</span>
+                </div>
+                <div className="timer-item">
+                  <div className="timer-circle">
+                    <span className="timer-number">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                  </div>
+                  <span className="timer-label">MINS</span>
+                </div>
+                <div className="timer-item">
+                  <div className="timer-circle">
+                    <span className="timer-number">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                  </div>
+                  <span className="timer-label">SECS</span>
+                </div>
+              </div>
+              
+              <button 
+                className="hot-deal-btn" 
+                onClick={() => {
+                  if (promotion.buttonLink) {
+                    navigate(promotion.buttonLink)
+                  } else {
+                    navigate('/shop')
+                  }
+                }}
+              >
+                {promotion.buttonText || "SHOP NOW"}
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+        )
+      })()}
 
       {/* Featured Products Section */}
       <section className="featured-products">

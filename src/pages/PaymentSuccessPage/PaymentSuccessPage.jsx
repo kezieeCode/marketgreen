@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useCart } from '../context/CartContext.jsx'
-import { useAuth } from '../context/AuthContext.jsx'
-import { API_ENDPOINTS } from '../config/api.js'
-import './CheckoutPage.css'
+import { useCart } from '../../context/CartContext.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { API_ENDPOINTS } from '../../config/api.js'
+import '../CheckoutPage/CheckoutPage.css'
 
 function PaymentSuccessPage() {
   const navigate = useNavigate()

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useCart } from '../context/CartContext.jsx'
-import { useAuth } from '../context/AuthContext.jsx'
-import { API_ENDPOINTS } from '../config/api.js'
+import { useCart } from '../../context/CartContext.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { API_ENDPOINTS } from '../../config/api.js'
 import './CheckoutPage.css'
 
 function CheckoutPage() {
@@ -25,6 +25,10 @@ function CheckoutPage() {
 
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false)
+  const [couponError, setCouponError] = useState('')
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -90,7 +94,7 @@ function CheckoutPage() {
 
     // Build items payload from cart
     const items = cartItems.map((item) => ({
-      product_id: item.id,
+      product_id: item.productId || item.id, // Use productId if available, fallback to id
       quantity: item.quantity,
       price: item.price,
     }))
@@ -109,8 +113,9 @@ function CheckoutPage() {
       subtotal: Number(subtotal.toFixed(2)),
       shipping_amount: Number(shippingFee.toFixed(2)),
       tax_amount: 0,
-      discount_amount: 0,
+      discount_amount: Number(discountAmount.toFixed(2)),
       total_amount: Number(total.toFixed(2)),
+      coupon_code: appliedCoupon ? appliedCoupon.code : null,
       payment_method: paymentMethod,
       email: formData.email || user?.email || '',
       notes: '',
@@ -178,9 +183,78 @@ function CheckoutPage() {
     }
   }
 
+  const handleApplyCoupon = async (e) => {
+    e.preventDefault()
+    if (!couponCode.trim()) {
+      setCouponError('Please enter a coupon code')
+      return
+    }
+
+    setIsApplyingCoupon(true)
+    setCouponError('')
+
+    try {
+      const orderAmount = getCartTotal()
+      
+      const response = await fetch(API_ENDPOINTS.COUPONS.APPLY, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          code: couponCode.trim().toUpperCase(),
+          orderAmount: orderAmount
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        let errorMessage = 'Failed to apply coupon'
+        
+        try {
+          const errorData = JSON.parse(errorText)
+          errorMessage = errorData.message || errorData.error || errorMessage
+        } catch {
+          errorMessage = errorText || `Server error: ${response.status} ${response.statusText}`
+        }
+        
+        setCouponError(errorMessage)
+        setAppliedCoupon(null)
+        return
+      }
+
+      const data = await response.json()
+      console.log('Coupon API Response:', data)
+      
+      // Store the full coupon data including discount amount from API
+      setAppliedCoupon({
+        ...data,
+        discountAmount: data.discountAmount || data.discount_amount || 0
+      })
+      setCouponError('')
+    } catch (err) {
+      console.error('Error applying coupon:', err)
+      setCouponError('Failed to apply coupon. Please try again.')
+      setAppliedCoupon(null)
+    } finally {
+      setIsApplyingCoupon(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponCode('')
+    setCouponError('')
+  }
+
   const subtotal = getCartTotal()
   const shippingFee = subtotal > 100 ? 0 : 500 // Free shipping over ₦100
-  const total = subtotal + shippingFee
+  
+  // Use discount amount from API response
+  const discountAmount = appliedCoupon?.discountAmount || appliedCoupon?.discount_amount || 0
+  
+  const total = Math.max(0, subtotal + shippingFee - discountAmount)
 
   if (cartItems.length === 0) {
     return (
@@ -461,6 +535,63 @@ function CheckoutPage() {
           <div className="checkout-summary">
             <h2 className="checkout-summary-title">Order Summary</h2>
             
+            {/* Coupon Code Section */}
+            <div className="checkout-coupon-section">
+              {!appliedCoupon ? (
+                <div className="checkout-coupon-form">
+                  <div className="checkout-coupon-input-group">
+                    <input
+                      type="text"
+                      placeholder="Enter coupon code"
+                      value={couponCode}
+                      onChange={(e) => {
+                        setCouponCode(e.target.value.toUpperCase())
+                        setCouponError('')
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleApplyCoupon(e)
+                        }
+                      }}
+                      className={`checkout-coupon-input ${couponError ? 'checkout-coupon-input-error' : ''}`}
+                      disabled={isApplyingCoupon}
+                    />
+                    <button
+                      type="button"
+                      className="checkout-coupon-btn"
+                      onClick={handleApplyCoupon}
+                      disabled={isApplyingCoupon || !couponCode.trim()}
+                    >
+                      {isApplyingCoupon ? 'Applying...' : 'Apply'}
+                    </button>
+                  </div>
+                  {couponError && (
+                    <span className="checkout-coupon-error">{couponError}</span>
+                  )}
+                </div>
+              ) : (
+                <div className="checkout-coupon-applied">
+                  <div className="checkout-coupon-applied-info">
+                    <span className="checkout-coupon-applied-icon">✓</span>
+                    <span className="checkout-coupon-applied-code">{appliedCoupon.code}</span>
+                    <span className="checkout-coupon-applied-discount">
+                      {appliedCoupon.discountType === 'percentage' 
+                        ? `${appliedCoupon.discountValue}% off`
+                        : `₦${appliedCoupon.discountValue} off`} - ₦{discountAmount.toFixed(2)} discount
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="checkout-coupon-remove"
+                    onClick={handleRemoveCoupon}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+            
             <div className="checkout-items">
               {cartItems.map((item) => (
                 <div key={item.id} className="checkout-item">
@@ -490,6 +621,12 @@ function CheckoutPage() {
                 <span>Shipping</span>
                 <span>{shippingFee === 0 ? 'Free' : `₦${shippingFee.toFixed(2)}`}</span>
               </div>
+              {discountAmount > 0 && (
+                <div className="checkout-summary-row checkout-discount-row">
+                  <span>Discount ({appliedCoupon?.code})</span>
+                  <span className="checkout-discount-amount">-₦{discountAmount.toFixed(2)}</span>
+                </div>
+              )}
               {subtotal > 100 && (
                 <div className="checkout-summary-discount">
                   <span>🎉 Free shipping on orders over ₦100</span>

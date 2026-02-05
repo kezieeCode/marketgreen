@@ -1,37 +1,39 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useCart } from '../context/CartContext.jsx'
-import { useNavigation } from '../context/NavigationContext.jsx'
-import CartDropdown from '../components/CartDropdown.jsx'
-import UserMenuDropdown from '../components/UserMenuDropdown.jsx'
-import { API_ENDPOINTS } from '../config/api.js'
-import '../App.css'
-import logo from '../assets/images/logo.png'
-import backgroundMenuImage from '../assets/images/pictures/background-menu.png'
-import tomatoesImage from '../assets/images/pictures/tomatoes.png'
-import juiceImage from '../assets/images/pictures/juice.png'
-import orangeImage from '../assets/images/pictures/orange.png'
-import avocadoImage from '../assets/images/pictures/avocado.png'
-import guavaImage from '../assets/images/pictures/guava.png'
-import kiwiImage from '../assets/images/pictures/kiwi.png'
-import masromImage from '../assets/images/pictures/masrom.png'
-import fruitsComboImage from '../assets/images/products/fruits.png'
-import vegetablePackImage from '../assets/images/products/vegies.png'
-import staplesKitImage from '../assets/images/products/grains.png'
-import dairyPackImage from '../assets/images/products/milk.png'
-import snacksComboImage from '../assets/images/products/munchies.png'
-import breakfastImage from '../assets/images/products/breakfast.png'
-import healthKitImage from '../assets/images/products/health.png'
-import curatedIcon from '../assets/images/vector/curated.png'
-import deliveryIcon from '../assets/images/vector/delivery.png'
-import handmadeIcon from '../assets/images/vector/handmade.png'
-import naturalIcon from '../assets/images/vector/natural.png'
-import paymentImage from '../assets/images/vector/payment.png'
+import { useCart } from '../../context/CartContext.jsx'
+import { useNavigation } from '../../context/NavigationContext.jsx'
+import { useAuth } from '../../context/AuthContext.jsx'
+import CartDropdown from '../../components/CartDropdown.jsx'
+import UserMenuDropdown from '../../components/UserMenuDropdown.jsx'
+import { API_ENDPOINTS } from '../../config/api.js'
+import '../../App.css'
+import logo from '../../assets/images/logo.png'
+import backgroundMenuImage from '../../assets/images/pictures/background-menu.png'
+import tomatoesImage from '../../assets/images/pictures/tomatoes.png'
+import juiceImage from '../../assets/images/pictures/juice.png'
+import orangeImage from '../../assets/images/pictures/orange.png'
+import avocadoImage from '../../assets/images/pictures/avocado.png'
+import guavaImage from '../../assets/images/pictures/guava.png'
+import kiwiImage from '../../assets/images/pictures/kiwi.png'
+import masromImage from '../../assets/images/pictures/masrom.png'
+import fruitsComboImage from '../../assets/images/products/fruits.png'
+import vegetablePackImage from '../../assets/images/products/vegies.png'
+import staplesKitImage from '../../assets/images/products/grains.png'
+import dairyPackImage from '../../assets/images/products/milk.png'
+import snacksComboImage from '../../assets/images/products/munchies.png'
+import breakfastImage from '../../assets/images/products/breakfast.png'
+import healthKitImage from '../../assets/images/products/health.png'
+import curatedIcon from '../../assets/images/vector/curated.png'
+import deliveryIcon from '../../assets/images/vector/delivery.png'
+import handmadeIcon from '../../assets/images/vector/handmade.png'
+import naturalIcon from '../../assets/images/vector/natural.png'
+import paymentImage from '../../assets/images/vector/payment.png'
 
 function ShopPage() {
   const navigate = useNavigate()
   const { getCartItemCount } = useCart()
   const { setNavigating } = useNavigation()
+  const { token, isAuthenticated } = useAuth()
   const [priceMax, setPriceMax] = useState(1500)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [products, setProducts] = useState([])
@@ -41,6 +43,8 @@ function ShopPage() {
   const [hasLoaded, setHasLoaded] = useState(false)
   const [topRatedProducts, setTopRatedProducts] = useState([])
   const [isLoadingTopRated, setIsLoadingTopRated] = useState(true)
+  const [wishlistItems, setWishlistItems] = useState([])
+  const [addingToWishlist, setAddingToWishlist] = useState(null)
 
   const handleNavigateHome = (e) => {
     e.preventDefault()
@@ -171,6 +175,94 @@ function ShopPage() {
 
     return () => controller.abort()
   }, [])
+
+  // Fetch wishlist items
+  useEffect(() => {
+    if (!isAuthenticated() || !token) return
+
+    async function fetchWishlist() {
+      try {
+        const response = await fetch(API_ENDPOINTS.WISHLIST.LIST, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const itemsList = Array.isArray(data) ? data : (data.items || data.wishlist || [])
+          setWishlistItems(itemsList.map(item => item.product_id || item.product?.id || item.id))
+        }
+      } catch (err) {
+        console.error('Error fetching wishlist:', err)
+      }
+    }
+
+    fetchWishlist()
+  }, [token, isAuthenticated])
+
+  const handleAddToWishlist = async (e, product) => {
+    e.stopPropagation() // Prevent navigation to product page
+
+    if (!isAuthenticated()) {
+      navigate('/signup')
+      return
+    }
+
+    const productId = product.id
+    const isInWishlist = wishlistItems.includes(productId)
+
+    setAddingToWishlist(productId)
+
+    try {
+      if (isInWishlist) {
+        // Remove from wishlist
+        const wishlistItem = await fetch(API_ENDPOINTS.WISHLIST.LIST, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }).then(res => res.json())
+        
+        const itemToRemove = Array.isArray(wishlistItem) 
+          ? wishlistItem.find(item => (item.product_id || item.product?.id || item.id) === productId)
+          : (wishlistItem.items || wishlistItem.wishlist || []).find(item => (item.product_id || item.product?.id || item.id) === productId)
+
+        if (itemToRemove) {
+          const response = await fetch(API_ENDPOINTS.WISHLIST.REMOVE(itemToRemove.id || itemToRemove.wishlist_id), {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
+          })
+
+          if (response.ok) {
+            setWishlistItems(prev => prev.filter(id => id !== productId))
+          }
+        }
+      } else {
+        // Add to wishlist
+        const response = await fetch(API_ENDPOINTS.WISHLIST.ADD, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+          body: JSON.stringify({ product_id: productId }),
+        })
+
+        if (response.ok) {
+          setWishlistItems(prev => [...prev, productId])
+        }
+      }
+    } catch (err) {
+      console.error('Error updating wishlist:', err)
+    } finally {
+      setAddingToWishlist(null)
+    }
+  }
 
   // Sort products based on selected option
   const sortedProducts = [...products].sort((a, b) => {
@@ -364,11 +456,30 @@ function ShopPage() {
                       {renderStars(product.rating)}
                     </div>
                     <h3 className="product-name">{product.name}</h3>
-                    <div className="product-price">
-                      <span className="current-price">₦{product.price.toFixed(2)}</span>
-                      {product.originalPrice > product.price && (
-                        <span className="original-price">₦{product.originalPrice.toFixed(2)}</span>
-                      )}
+                    <div className="product-price-wrapper">
+                      <div className="product-price">
+                        <span className="current-price">₦{product.price.toFixed(2)}</span>
+                        {product.originalPrice > product.price && (
+                          <span className="original-price">₦{product.originalPrice.toFixed(2)}</span>
+                        )}
+                      </div>
+                      <button
+                        className={`wishlist-icon-btn ${wishlistItems.includes(product.id) ? 'active' : ''}`}
+                        onClick={(e) => handleAddToWishlist(e, product)}
+                        disabled={addingToWishlist === product.id}
+                        title={wishlistItems.includes(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path 
+                            d="M10 17.5L3.5 11C1.5 9 1.5 5.5 3.5 3.5C5.5 1.5 9 1.5 11 3.5L10 4.5L9 3.5C11 1.5 14.5 1.5 16.5 3.5C18.5 5.5 18.5 9 16.5 11L10 17.5Z" 
+                            stroke="currentColor" 
+                            strokeWidth="1.5" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round"
+                            fill={wishlistItems.includes(product.id) ? 'currentColor' : 'none'}
+                          />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 ))

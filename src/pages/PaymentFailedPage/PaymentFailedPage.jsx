@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import './CheckoutPage.css'
+import '../CheckoutPage/CheckoutPage.css'
 
 function PaymentFailedPage() {
   const navigate = useNavigate()

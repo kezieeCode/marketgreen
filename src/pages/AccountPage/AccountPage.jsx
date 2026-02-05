@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
-import { useCart } from '../context/CartContext.jsx'
-import CartDropdown from '../components/CartDropdown.jsx'
-import UserMenuDropdown from '../components/UserMenuDropdown.jsx'
-import { API_ENDPOINTS } from '../config/api.js'
-import logo from '../assets/images/logo.png'
-import backgroundMenuImage from '../assets/images/pictures/background-menu.png'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { useCart } from '../../context/CartContext.jsx'
+import CartDropdown from '../../components/CartDropdown.jsx'
+import UserMenuDropdown from '../../components/UserMenuDropdown.jsx'
+import { API_ENDPOINTS } from '../../config/api.js'
+import logo from '../../assets/images/logo.png'
+import backgroundMenuImage from '../../assets/images/pictures/background-menu.png'
 import './AccountPage.css'
 
 function AccountPage() {
@@ -18,6 +18,9 @@ function AccountPage() {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('profile')
   const [isEditing, setIsEditing] = useState(false)
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [toast, setToast] = useState(null)
   const [accountStats, setAccountStats] = useState({
     totalOrders: 0,
     totalSpent: 0,
@@ -57,20 +60,20 @@ function AccountPage() {
     theme: 'light'
   })
 
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate('/signup')
-      return
-    }
-    loadAccountData()
-  }, [token, isAuthenticated, navigate])
+  // Use refs to prevent infinite loops
+  const hasLoadedRef = useRef(false)
+  const isLoadingRef = useRef(false)
 
-  const loadAccountData = async () => {
+  const loadAccountData = useCallback(async () => {
+    // Prevent multiple simultaneous loads
+    if (isLoadingRef.current) return
+    isLoadingRef.current = true
+
     setIsLoading(true)
     setError(null)
     try {
-      // Fetch user info (non-blocking - won't cause infinite loading)
-      if (token) {
+      // Only fetch user info once on initial load, not on every render
+      if (token && !hasLoadedRef.current) {
         fetchUserInfo(token).catch(() => {
           // Silently fail - user data might already be in context
         })
@@ -79,9 +82,9 @@ function AccountPage() {
       // Load account stats (now uses mock data)
       await fetchAccountStats()
 
-      // Initialize form data from user
+      // Initialize form data from user (only if not already set or user changed)
       if (user) {
-        setFormData({
+        const newFormData = {
           username: user.username || user.email?.split('@')[0] || '',
           email: user.email || '',
           phone: user.phone || '',
@@ -94,9 +97,17 @@ function AccountPage() {
           zipCode: user.zip_code || user.zipCode || '',
           dateOfBirth: user.date_of_birth || user.dateOfBirth || '',
           gender: user.gender || ''
+        }
+        
+        // Only update if data actually changed (prevent unnecessary re-renders)
+        setFormData(prev => {
+          const hasChanged = Object.keys(newFormData).some(
+            key => prev[key] !== newFormData[key]
+          )
+          return hasChanged ? newFormData : prev
         })
-      } else {
-        // Initialize with empty/default values if no user data
+      } else if (!hasLoadedRef.current) {
+        // Initialize with empty/default values only on first load
         setFormData({
           username: '',
           email: '',
@@ -112,13 +123,28 @@ function AccountPage() {
           gender: ''
         })
       }
+      
+      hasLoadedRef.current = true
     } catch (err) {
       console.error('Error loading account data:', err)
       setError(err.message)
     } finally {
       setIsLoading(false)
+      isLoadingRef.current = false
     }
-  }
+  }, [token, user, fetchUserInfo])
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate('/signup')
+      return
+    }
+    
+    // Only load data once when component mounts or token changes
+    if (token && !hasLoadedRef.current) {
+      loadAccountData()
+    }
+  }, [token]) // Only depend on token, not isAuthenticated or navigate
 
   const fetchAccountStats = async () => {
     // Disabled API calls - using mock stats for now
@@ -182,79 +208,176 @@ function AccountPage() {
     */
   }
 
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
+  }
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault()
     
-    // Disabled API calls - just update local state for now
-    // TODO: Enable when backend API is ready
-    setIsEditing(false)
-    alert('Profile updated successfully! (Demo mode - changes not saved to server)')
-    
-    /* API calls disabled - uncomment when backend is ready
+    if (!token) {
+      showToast('Please log in to update your profile', 'error')
+      return
+    }
+
+    setIsSavingProfile(true)
+
     try {
+      // Format the request body to match the API endpoint
+      const requestBody = {
+        username: formData.username,
+        email: formData.email,
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        gender: formData.gender,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        zipCode: formData.zipCode
+      }
+
+      console.log('📝 Updating profile with data:', requestBody)
+      console.log('🔗 API Endpoint:', API_ENDPOINTS.ACCOUNT.UPDATE)
+
       const response = await fetch(API_ENDPOINTS.ACCOUNT.UPDATE, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(requestBody),
       })
+
+      console.log('📡 Profile Update Response Status:', response.status, response.statusText)
 
       if (response.ok) {
         const updatedUser = await response.json()
+        console.log('✅ Profile updated successfully:', updatedUser)
+        
+        // Refresh user info to get updated data
         await fetchUserInfo(token)
+        
+        // Update form data with the response
+        if (updatedUser) {
+          setFormData({
+            username: updatedUser.username || formData.username,
+            email: updatedUser.email || formData.email,
+            phone: updatedUser.phone || formData.phone,
+            firstName: updatedUser.firstName || updatedUser.first_name || formData.firstName,
+            lastName: updatedUser.lastName || updatedUser.last_name || formData.lastName,
+            address: updatedUser.address || formData.address,
+            city: updatedUser.city || formData.city,
+            state: updatedUser.state || formData.state,
+            country: updatedUser.country || formData.country,
+            zipCode: updatedUser.zipCode || updatedUser.zip_code || formData.zipCode,
+            dateOfBirth: updatedUser.dateOfBirth || updatedUser.date_of_birth || formData.dateOfBirth,
+            gender: updatedUser.gender || formData.gender
+          })
+        }
+        
         setIsEditing(false)
-        alert('Profile updated successfully!')
+        showToast('Profile updated successfully!', 'success')
       } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to update profile')
+        let errorMessage = 'Failed to update profile'
+        try {
+          const errorData = await response.json()
+          console.error('❌ Profile Update Error Response:', errorData)
+          errorMessage = errorData.message || errorData.error || errorMessage
+          
+          if (errorData.details) {
+            errorMessage = `${errorMessage}. ${errorData.details}`
+          }
+        } catch (parseError) {
+          const errorText = await response.text()
+          console.error('❌ Profile Update Error Text:', errorText)
+          errorMessage = `${errorMessage}. ${errorText || 'Unknown error'}`
+        }
+        
+        showToast(errorMessage, 'error')
       }
     } catch (err) {
-      console.error('Error updating profile:', err)
-      alert('Failed to update profile. Please try again.')
+      console.error('❌ Error updating profile:', err)
+      showToast('Failed to update profile. Please try again.', 'error')
+    } finally {
+      setIsSavingProfile(false)
     }
-    */
   }
 
   const handleChangePassword = async (e) => {
     e.preventDefault()
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('New passwords do not match')
+    
+    if (!token) {
+      showToast('Please log in to change your password', 'error')
       return
     }
 
-    // Disabled API calls - just clear form for now
-    // TODO: Enable when backend API is ready
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
-    alert('Password changed successfully! (Demo mode - changes not saved to server)')
-    
-    /* API calls disabled - uncomment when backend is ready
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showToast('New passwords do not match', 'error')
+      return
+    }
+
+    if (!passwordData.currentPassword || !passwordData.newPassword) {
+      showToast('Please fill in all password fields', 'error')
+      return
+    }
+
+    setIsChangingPassword(true)
+
     try {
+      const requestBody = {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      }
+
+      console.log('🔐 Changing password')
+      console.log('🔗 API Endpoint:', API_ENDPOINTS.ACCOUNT.CHANGE_PASSWORD)
+
       const response = await fetch(API_ENDPOINTS.ACCOUNT.CHANGE_PASSWORD, {
-        method: 'POST',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          current_password: passwordData.currentPassword,
-          new_password: passwordData.newPassword,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
+      console.log('📡 Change Password Response Status:', response.status, response.statusText)
+
       if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Password changed successfully:', data)
+        
+        // Clear form
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
-        alert('Password changed successfully!')
+        showToast('Password changed successfully!', 'success')
       } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to change password')
+        let errorMessage = 'Failed to change password'
+        try {
+          const errorData = await response.json()
+          console.error('❌ Change Password Error Response:', errorData)
+          errorMessage = errorData.message || errorData.error || errorMessage
+          
+          if (errorData.details) {
+            errorMessage = `${errorMessage}. ${errorData.details}`
+          }
+        } catch (parseError) {
+          const errorText = await response.text()
+          console.error('❌ Change Password Error Text:', errorText)
+          errorMessage = `${errorMessage}. ${errorText || 'Unknown error'}`
+        }
+        
+        showToast(errorMessage, 'error')
       }
     } catch (err) {
-      console.error('Error changing password:', err)
-      alert('Failed to change password. Please try again.')
+      console.error('❌ Error changing password:', err)
+      showToast('Failed to change password. Please try again.', 'error')
+    } finally {
+      setIsChangingPassword(false)
     }
-    */
   }
 
   const handleUpdatePreferences = async () => {
@@ -364,6 +487,18 @@ function AccountPage() {
 
   return (
     <div className="App account-page">
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`toast toast-${toast.type}`}>
+          <div className="toast-content">
+            <span className="toast-icon">
+              {toast.type === 'success' ? '✓' : '✕'}
+            </span>
+            <span className="toast-message">{toast.message}</span>
+          </div>
+          <button className="toast-close" onClick={() => setToast(null)}>×</button>
+        </div>
+      )}
       {/* Header */}
       <header className="header">
         <div className="header-container">
@@ -659,11 +794,20 @@ function AccountPage() {
                       </div>
                       {isEditing && (
                         <div className="account-form-actions">
-                          <button type="submit" className="account-save-btn">Save Changes</button>
+                          <button type="submit" className="account-save-btn" disabled={isSavingProfile}>
+                            {isSavingProfile ? (
+                              <>
+                                <span className="account-save-btn-spinner"></span>
+                                Saving...
+                              </>
+                            ) : (
+                              'Save Changes'
+                            )}
+                          </button>
                           <button type="button" className="account-cancel-btn" onClick={() => {
                             setIsEditing(false)
                             loadAccountData()
-                          }}>Cancel</button>
+                          }} disabled={isSavingProfile}>Cancel</button>
                         </div>
                       )}
                     </form>
@@ -705,7 +849,16 @@ function AccountPage() {
                         />
                       </div>
                       <div className="account-form-actions">
-                        <button type="submit" className="account-save-btn">Change Password</button>
+                        <button type="submit" className="account-save-btn" disabled={isChangingPassword}>
+                          {isChangingPassword ? (
+                            <>
+                              <span className="account-save-btn-spinner"></span>
+                              Changing...
+                            </>
+                          ) : (
+                            'Change Password'
+                          )}
+                        </button>
                       </div>
                     </form>
                   </div>
