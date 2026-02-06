@@ -14,7 +14,7 @@ function InboxPage() {
   const navigate = useNavigate()
   const { getCartItemCount } = useCart()
   const { setNavigating } = useNavigation()
-  const { token, isAuthenticated } = useAuth()
+  const { token, isAuthenticated, isLoading: authLoading } = useAuth()
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [messages, setMessages] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -24,32 +24,45 @@ function InboxPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    if (!isAuthenticated()) {
+    // Wait for auth to finish loading before checking authentication
+    if (authLoading) {
+      return
+    }
+    
+    // Check if user is authenticated
+    if (!token || !isAuthenticated()) {
       navigate('/signup')
       return
     }
+    
+    // Only fetch messages if authenticated
     fetchMessages()
-  }, [token, isAuthenticated, navigate])
+  }, [token, isAuthenticated, navigate, authLoading])
 
   const fetchMessages = async () => {
+    if (!token) {
+      setIsLoading(false)
+      setMessages([])
+      return
+    }
+
     setIsLoading(true)
     setError(null)
     
-    // Disabled API calls - using mock data directly for now
-    // TODO: Enable when backend API is ready
-    setTimeout(() => {
-      setMessages(getMockMessages())
-      setIsLoading(false)
-    }, 500) // Small delay to simulate loading
-    
-    /* API calls disabled - uncomment when backend is ready
     try {
-      const response = await fetch(API_ENDPOINTS.INBOX.LIST, {
+      // Fetch all notifications (API filter only supports 'unread', so we fetch all and filter client-side)
+      const url = API_ENDPOINTS.NOTIFICATIONS.LIST('all')
+      
+      console.log('📬 Fetching notifications from:', url)
+      
+      const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
         },
       })
+
+      console.log('📡 Notifications API Response Status:', response.status, response.statusText)
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -57,102 +70,45 @@ function InboxPage() {
           return
         }
         if (response.status === 404) {
-          setMessages(getMockMessages())
+          setMessages([])
           setIsLoading(false)
           return
         }
-        throw new Error('Failed to fetch messages')
+        throw new Error('Failed to fetch notifications')
       }
 
       const data = await response.json()
-      const messagesList = Array.isArray(data) ? data : (data.messages || [])
-      setMessages(messagesList)
+      console.log('✅ Notifications API Response:', data)
+      
+      // Handle different response formats
+      const notificationsList = Array.isArray(data) 
+        ? data 
+        : (data.notifications || data.items || data.data || [])
+      
+      // Normalize notification data to match UI expectations
+      const normalizedMessages = notificationsList.map(notification => ({
+        id: notification.id || notification.notification_id,
+        subject: notification.title || notification.subject || notification.message || 'Notification',
+        sender: notification.sender || 'MarketGreen',
+        sender_email: notification.sender_email || notification.senderEmail || 'noreply@marketgreen.com',
+        preview: notification.message || notification.description || notification.body || '',
+        body: notification.body || notification.message || notification.description || '',
+        is_read: notification.is_read !== undefined ? notification.is_read : (notification.isRead !== undefined ? notification.isRead : false),
+        is_important: notification.is_important !== undefined ? notification.is_important : (notification.isImportant !== undefined ? notification.isImportant : false),
+        created_at: notification.created_at || notification.createdAt || notification.timestamp || notification.date,
+        type: notification.type || notification.category || 'notification'
+      }))
+      
+      setMessages(normalizedMessages)
     } catch (err) {
-      console.error('Error fetching messages:', err)
-      setMessages(getMockMessages())
+      console.error('❌ Error fetching notifications:', err)
+      setError(err.message || 'Failed to load notifications')
+      setMessages([])
     } finally {
       setIsLoading(false)
     }
-    */
   }
 
-  // Mock messages for demo purposes
-  const getMockMessages = () => {
-    return [
-      {
-        id: 1,
-        subject: 'Welcome to MarketGreen!',
-        sender: 'MarketGreen Team',
-        sender_email: 'noreply@marketgreen.com',
-        preview: 'Thank you for joining MarketGreen! We\'re excited to have you as part of our community. Explore our fresh produce and enjoy fast delivery...',
-        body: 'Thank you for joining MarketGreen! We\'re excited to have you as part of our community. Explore our fresh produce and enjoy fast delivery to your doorstep. Get started by browsing our featured products and don\'t forget to check out our special offers!',
-        is_read: false,
-        is_important: true,
-        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        type: 'notification'
-      },
-      {
-        id: 2,
-        subject: 'Your Order #12345 Has Been Shipped',
-        sender: 'MarketGreen Orders',
-        sender_email: 'orders@marketgreen.com',
-        preview: 'Great news! Your order has been shipped and is on its way to you. Track your delivery in real-time...',
-        body: 'Great news! Your order #12345 has been shipped and is on its way to you. You can track your delivery in real-time using the tracking number: TRK-789456123. Expected delivery date: Tomorrow by 5 PM. Thank you for shopping with MarketGreen!',
-        is_read: false,
-        is_important: true,
-        created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-        type: 'order'
-      },
-      {
-        id: 3,
-        subject: 'Special Offer: 25% Off Fresh Fruits',
-        sender: 'MarketGreen Promotions',
-        sender_email: 'promotions@marketgreen.com',
-        preview: 'Don\'t miss out on our weekend special! Get 25% off on all fresh fruits. Use code FRESH25 at checkout...',
-        body: 'Don\'t miss out on our weekend special! Get 25% off on all fresh fruits. Use code FRESH25 at checkout. This offer is valid until Sunday midnight. Stock up on your favorite fruits and enjoy the savings!',
-        is_read: true,
-        is_important: false,
-        created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        type: 'promotion'
-      },
-      {
-        id: 4,
-        subject: 'Order Confirmation #12344',
-        sender: 'MarketGreen Orders',
-        sender_email: 'orders@marketgreen.com',
-        preview: 'Thank you for your order! We\'ve received your order and it\'s being processed. You\'ll receive another email when it ships...',
-        body: 'Thank you for your order! We\'ve received your order #12344 and it\'s being processed. You\'ll receive another email when it ships. Order total: ₦15,450.00. Estimated delivery: 2-3 business days.',
-        is_read: true,
-        is_important: false,
-        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        type: 'order'
-      },
-      {
-        id: 5,
-        subject: 'Your Account Security Alert',
-        sender: 'MarketGreen Security',
-        sender_email: 'security@marketgreen.com',
-        preview: 'We noticed a new login to your account. If this was you, no action is needed. If not, please secure your account immediately...',
-        body: 'We noticed a new login to your account from a new device. If this was you, no action is needed. If you don\'t recognize this activity, please secure your account immediately by changing your password.',
-        is_read: false,
-        is_important: true,
-        created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        type: 'security'
-      },
-      {
-        id: 6,
-        subject: 'New Product Alert: Organic Vegetables',
-        sender: 'MarketGreen Products',
-        sender_email: 'products@marketgreen.com',
-        preview: 'Check out our new range of organic vegetables! Fresh from local farms, now available in our store...',
-        body: 'Check out our new range of organic vegetables! Fresh from local farms, now available in our store. From crisp lettuce to juicy tomatoes, we\'ve got everything you need for a healthy meal.',
-        is_read: true,
-        is_important: false,
-        created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-        type: 'product'
-      }
-    ]
-  }
 
   const handleNavigateHome = (e) => {
     e.preventDefault()
@@ -250,34 +206,41 @@ function InboxPage() {
   }
 
   const markAsRead = async (messageId) => {
-    // Disabled API calls - just update local state for now
-    // TODO: Enable when backend API is ready
+    if (!token) return
+
+    // Optimistic update
     setMessages(messages.map(msg => 
       msg.id === messageId ? { ...msg, is_read: true } : msg
     ))
     
-    /* API calls disabled - uncomment when backend is ready
     try {
-      const response = await fetch(API_ENDPOINTS.INBOX.MARK_READ(messageId), {
+      const url = API_ENDPOINTS.NOTIFICATIONS.MARK_READ(messageId)
+      console.log('✅ Marking notification as read:', url)
+      
+      const response = await fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
         },
       })
 
-      if (response.ok) {
+      console.log('📡 Mark as read Response Status:', response.status, response.statusText)
+
+      if (!response.ok) {
+        // Revert optimistic update on error
         setMessages(messages.map(msg => 
-          msg.id === messageId ? { ...msg, is_read: true } : msg
+          msg.id === messageId ? { ...msg, is_read: false } : msg
         ))
+        console.error('Failed to mark notification as read:', response.status)
       }
     } catch (err) {
-      console.error('Error marking message as read:', err)
+      console.error('❌ Error marking notification as read:', err)
+      // Revert optimistic update on error
       setMessages(messages.map(msg => 
-        msg.id === messageId ? { ...msg, is_read: true } : msg
+        msg.id === messageId ? { ...msg, is_read: false } : msg
       ))
     }
-    */
   }
 
   const handleMessageClick = (message) => {
@@ -344,7 +307,7 @@ function InboxPage() {
               {getCartItemCount() > 0 && <span className="cart-badge">{getCartItemCount()}</span>}
             </button>
             <CartDropdown isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-            <button className="shop-now-btn">SHOP NOW</button>
+            <button className="shop-now-btn" onClick={() => navigate('/shop')}>SHOP NOW</button>
           </div>
         </div>
       </header>
@@ -417,7 +380,7 @@ function InboxPage() {
           </div>
 
           {/* Messages List */}
-          {isLoading ? (
+          {authLoading || isLoading ? (
             <div className="inbox-loading">
               <div className="inbox-loading-spinner"></div>
               <p>Loading your messages...</p>

@@ -532,7 +532,7 @@ function OrdersPage() {
               {getCartItemCount() > 0 && <span className="cart-badge">{getCartItemCount()}</span>}
             </button>
             <CartDropdown isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-            <button className="shop-now-btn">SHOP NOW</button>
+            <button className="shop-now-btn" onClick={() => navigate('/shop')}>SHOP NOW</button>
           </div>
         </div>
       </header>

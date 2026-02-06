@@ -20,17 +20,48 @@ export const CartProvider = ({ children }) => {
     return localStorage.getItem('token')
   }
 
+  // Get locally stored product images
+  const getLocalProductImages = () => {
+    try {
+      const stored = localStorage.getItem('marketgreen_product_images')
+      return stored ? JSON.parse(stored) : {}
+    } catch (error) {
+      console.error('Error loading product images from localStorage:', error)
+      return {}
+    }
+  }
+
+  // Save product image to local storage
+  const saveProductImage = (productId, imageUrl) => {
+    if (!productId || !imageUrl) return
+    
+    try {
+      const images = getLocalProductImages()
+      images[productId] = imageUrl
+      localStorage.setItem('marketgreen_product_images', JSON.stringify(images))
+    } catch (error) {
+      console.error('Error saving product image to localStorage:', error)
+    }
+  }
+
   // Normalize cart item from API response to UI format
+  // Images come from local storage, not from API
   const normalizeCartItem = (apiItem) => {
     // API might return item with product object or direct fields
     const product = apiItem.product || apiItem
+    const productId = product.id || apiItem.product_id || apiItem.productId
+    
+    // Get image from local storage first, fallback to empty string (not from API)
+    const localImages = getLocalProductImages()
+    const localImage = localImages[productId] || ''
+    
     return {
       id: apiItem.id || apiItem.cart_item_id, // Cart item UUID
-      productId: product.id || apiItem.product_id || apiItem.productId,
+      productId: productId,
       name: product.name || apiItem.name,
       price: Number(product.current_price || product.price || apiItem.price || 0),
       originalPrice: Number(product.original_price || product.originalPrice || apiItem.originalPrice || 0),
-      image: product.main_image || product.image_url || apiItem.image || '',
+      image: localImage, // Use local image, not from API
       quantity: Number(apiItem.quantity || 1)
     }
   }
@@ -124,6 +155,11 @@ export const CartProvider = ({ children }) => {
                         product.main_image || 
                         product.imageUrl ||
                         ''
+    
+    // Save product image to local storage when adding to cart
+    if (product.id && productImage) {
+      saveProductImage(product.id, productImage)
+    }
     
     if (!token) {
       // Fallback to localStorage if not authenticated

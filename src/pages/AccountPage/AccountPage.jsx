@@ -60,6 +60,9 @@ function AccountPage() {
     theme: 'light'
   })
 
+  const [activityItems, setActivityItems] = useState([])
+  const [isLoadingActivity, setIsLoadingActivity] = useState(false)
+
   // Use refs to prevent infinite loops
   const hasLoadedRef = useRef(false)
   const isLoadingRef = useRef(false)
@@ -147,39 +150,76 @@ function AccountPage() {
   }, [token]) // Only depend on token, not isAuthenticated or navigate
 
   const fetchAccountStats = async () => {
-    // Disabled API calls - using mock stats for now
-    // TODO: Enable when backend APIs are ready
-    setAccountStats({
-      totalOrders: 12,
-      totalSpent: 45600,
-      wishlistItems: 8,
-      vouchers: 4
-    })
-    
-    /* API calls disabled - uncomment when backend is ready
+    if (!token) {
+      // Use default stats if not authenticated
+      setAccountStats({
+        totalOrders: 0,
+        totalSpent: 0,
+        wishlistItems: 0,
+        vouchers: 0
+      })
+      return
+    }
+
     try {
-      const [ordersRes, wishlistRes, vouchersRes] = await Promise.allSettled([
+      // Fetch total spent from API
+      let totalSpent = 0
+      try {
+        const totalSpentResponse = await fetch(API_ENDPOINTS.ACCOUNT.TOTAL_SPENT, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (totalSpentResponse.ok) {
+          const totalSpentData = await totalSpentResponse.json()
+          // Handle different possible response formats
+          totalSpent = Number(totalSpentData.totalSpent || totalSpentData.total_spent || totalSpentData.amount || 0)
+        } else {
+          console.warn('Failed to fetch total spent:', totalSpentResponse.status)
+        }
+      } catch (totalSpentError) {
+        console.error('Error fetching total spent:', totalSpentError)
+      }
+
+      // Fetch voucher count from API
+      let vouchers = 0
+      try {
+        const vouchersCountResponse = await fetch(API_ENDPOINTS.COUPONS.COUNT, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (vouchersCountResponse.ok) {
+          const vouchersCountData = await vouchersCountResponse.json()
+          // Handle different possible response formats
+          vouchers = Number(vouchersCountData.count || vouchersCountData.total || vouchersCountData.vouchers || 0)
+        } else {
+          console.warn('Failed to fetch voucher count:', vouchersCountResponse.status)
+        }
+      } catch (vouchersCountError) {
+        console.error('Error fetching voucher count:', vouchersCountError)
+      }
+
+      // Fetch other stats (orders, wishlist)
+      const [ordersRes, wishlistRes] = await Promise.allSettled([
         fetch(API_ENDPOINTS.ORDERS.LIST, {
           headers: { Authorization: `Bearer ${token}` }
         }),
         fetch(API_ENDPOINTS.WISHLIST.LIST, {
           headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(API_ENDPOINTS.VOUCHERS.LIST, {
-          headers: { Authorization: `Bearer ${token}` }
         })
       ])
 
       let totalOrders = 0
-      let totalSpent = 0
       let wishlistItems = 0
-      let vouchers = 0
 
       if (ordersRes.status === 'fulfilled' && ordersRes.value.ok) {
         const ordersData = await ordersRes.value.json()
         const orders = Array.isArray(ordersData) ? ordersData : (ordersData.orders || [])
         totalOrders = orders.length
-        totalSpent = orders.reduce((sum, order) => sum + (Number(order.total_amount || order.total || 0)), 0)
       }
 
       if (wishlistRes.status === 'fulfilled' && wishlistRes.value.ok) {
@@ -188,24 +228,100 @@ function AccountPage() {
         wishlistItems = items.length
       }
 
-      if (vouchersRes.status === 'fulfilled' && vouchersRes.value.ok) {
-        const vouchersData = await vouchersRes.value.json()
-        const vouchersList = Array.isArray(vouchersData) ? vouchersData : (vouchersData.vouchers || [])
-        vouchers = vouchersList.filter(v => v.status === 'available' && !v.is_used).length
-      }
-
       setAccountStats({ totalOrders, totalSpent, wishlistItems, vouchers })
     } catch (err) {
       console.error('Error fetching stats:', err)
       // Use default stats if API fails
       setAccountStats({
-        totalOrders: 12,
-        totalSpent: 45600,
-        wishlistItems: 8,
-        vouchers: 4
+        totalOrders: 0,
+        totalSpent: 0,
+        wishlistItems: 0,
+        vouchers: 0
       })
     }
-    */
+  }
+
+  const fetchActivity = async () => {
+    if (!token) {
+      setActivityItems([])
+      return
+    }
+
+    setIsLoadingActivity(true)
+    try {
+      const response = await fetch(API_ENDPOINTS.ACCOUNT.ACTIVITY(20), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        // Handle both array response and object with activities property
+        const activities = Array.isArray(data) ? data : (data.activities || data.items || data.activity || [])
+        setActivityItems(activities)
+      } else {
+        console.warn('Failed to fetch activity:', response.status)
+        setActivityItems([])
+      }
+    } catch (error) {
+      console.error('Error fetching activity:', error)
+      setActivityItems([])
+    } finally {
+      setIsLoadingActivity(false)
+    }
+  }
+
+  // Fetch activity when activity tab is selected
+  useEffect(() => {
+    if (activeTab === 'activity' && token) {
+      fetchActivity()
+    }
+  }, [activeTab, token])
+
+  const formatActivityDate = (dateString) => {
+    if (!dateString) return 'Recently'
+    try {
+      const date = new Date(dateString)
+      const now = new Date()
+      const diffMs = now - date
+      const diffMins = Math.floor(diffMs / (1000 * 60))
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+      
+      if (diffMins < 1) return 'Just now'
+      if (diffMins < 60) return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`
+      if (diffHours < 24) return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`
+      if (diffDays === 1) return 'Yesterday'
+      if (diffDays < 7) return `${diffDays} days ago`
+      if (diffDays < 30) {
+        const weeks = Math.floor(diffDays / 7)
+        return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`
+      }
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    } catch {
+      return 'Recently'
+    }
+  }
+
+  const getActivityIcon = (type) => {
+    const typeLower = (type || '').toLowerCase()
+    if (typeLower.includes('order')) return '📦'
+    if (typeLower.includes('wishlist')) return '💝'
+    if (typeLower.includes('voucher') || typeLower.includes('coupon')) return '🎫'
+    if (typeLower.includes('profile')) return '👤'
+    if (typeLower.includes('review')) return '⭐'
+    if (typeLower.includes('payment')) return '💳'
+    return '📋'
+  }
+
+  const getActivityTitle = (activity) => {
+    return activity.title || activity.type || activity.action || 'Activity'
+  }
+
+  const getActivityDescription = (activity) => {
+    return activity.description || activity.message || activity.details || ''
   }
 
   const showToast = (message, type = 'success') => {
@@ -531,7 +647,7 @@ function AccountPage() {
               {getCartItemCount() > 0 && <span className="cart-badge">{getCartItemCount()}</span>}
             </button>
             <CartDropdown isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-            <button className="shop-now-btn">SHOP NOW</button>
+            <button className="shop-now-btn" onClick={() => navigate('/shop')}>SHOP NOW</button>
           </div>
         </div>
       </header>
@@ -964,40 +1080,34 @@ function AccountPage() {
                     <div className="account-section-header">
                       <h2 className="account-section-title">Recent Activity</h2>
                     </div>
-                    <div className="account-activity-list">
-                      <div className="account-activity-item">
-                        <div className="account-activity-icon">📦</div>
-                        <div className="account-activity-content">
-                          <h4>Order Placed</h4>
-                          <p>You placed order #12345</p>
-                          <span className="account-activity-date">2 hours ago</span>
-                        </div>
+                    {isLoadingActivity ? (
+                      <div className="account-loading">
+                        <div className="account-loading-spinner"></div>
+                        <p>Loading activity...</p>
                       </div>
-                      <div className="account-activity-item">
-                        <div className="account-activity-icon">💝</div>
-                        <div className="account-activity-content">
-                          <h4>Added to Wishlist</h4>
-                          <p>Fresh Fruits Combo added to your wishlist</p>
-                          <span className="account-activity-date">1 day ago</span>
-                        </div>
+                    ) : activityItems.length === 0 ? (
+                      <div className="account-activity-empty">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#999"/>
+                        </svg>
+                        <p>No recent activity</p>
                       </div>
-                      <div className="account-activity-item">
-                        <div className="account-activity-icon">🎫</div>
-                        <div className="account-activity-content">
-                          <h4>Voucher Redeemed</h4>
-                          <p>You redeemed voucher code WELCOME25</p>
-                          <span className="account-activity-date">3 days ago</span>
-                        </div>
+                    ) : (
+                      <div className="account-activity-list">
+                        {activityItems.map((activity, index) => (
+                          <div key={activity.id || activity.activity_id || index} className="account-activity-item">
+                            <div className="account-activity-icon">{getActivityIcon(activity.type || activity.action)}</div>
+                            <div className="account-activity-content">
+                              <h4>{getActivityTitle(activity)}</h4>
+                              <p>{getActivityDescription(activity)}</p>
+                              <span className="account-activity-date">
+                                {formatActivityDate(activity.created_at || activity.createdAt || activity.timestamp || activity.date)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="account-activity-item">
-                        <div className="account-activity-icon">👤</div>
-                        <div className="account-activity-content">
-                          <h4>Profile Updated</h4>
-                          <p>You updated your profile information</p>
-                          <span className="account-activity-date">1 week ago</span>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </>

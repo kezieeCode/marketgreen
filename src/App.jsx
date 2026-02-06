@@ -311,6 +311,24 @@ function HomePage() {
           }
         }
       } else {
+        // Extract and save product image to local storage
+        const productImage = product.images?.[0] || 
+                            product.image || 
+                            product.image_url || 
+                            product.main_image || 
+                            product.imageUrl ||
+                            ''
+        
+        if (productId && productImage) {
+          try {
+            const images = JSON.parse(localStorage.getItem('marketgreen_product_images') || '{}')
+            images[productId] = productImage
+            localStorage.setItem('marketgreen_product_images', JSON.stringify(images))
+          } catch (error) {
+            console.error('Error saving product image to localStorage:', error)
+          }
+        }
+
         // Add to wishlist
         const response = await fetch(API_ENDPOINTS.WISHLIST.ADD, {
           method: 'POST',
@@ -318,7 +336,7 @@ function HomePage() {
             'Content-Type': 'application/json',
             ...(token && { Authorization: `Bearer ${token}` }),
           },
-          body: JSON.stringify({ product_id: productId }),
+          body: JSON.stringify({ productId: productId }),
         })
 
         if (response.ok) {

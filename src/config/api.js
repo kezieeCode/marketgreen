@@ -34,10 +34,9 @@ export const API_ENDPOINTS = {
     LIST: `${API_BASE_URL}/api/orders`,
     DETAIL: (id) => `${API_BASE_URL}/api/orders/${id}`
   },
-  INBOX: {
-    LIST: `${API_BASE_URL}/api/inbox`,
-    DETAIL: (id) => `${API_BASE_URL}/api/inbox/${id}`,
-    MARK_READ: (id) => `${API_BASE_URL}/api/inbox/${id}/read`
+  NOTIFICATIONS: {
+    LIST: (filter = 'all') => `${API_BASE_URL}/api/notifications${filter !== 'all' ? `?filter=${filter}` : ''}`,
+    MARK_READ: (id) => `${API_BASE_URL}/api/notifications/${id}/read`
   },
   VOUCHERS: {
     LIST: `${API_BASE_URL}/api/vouchers`,
@@ -46,7 +45,8 @@ export const API_ENDPOINTS = {
   },
   COUPONS: {
     LIST: (active = true) => `${API_BASE_URL}/api/coupons${active ? '?active=true' : ''}`,
-    APPLY: `${API_BASE_URL}/api/coupons/apply`
+    APPLY: `${API_BASE_URL}/api/coupons/apply`,
+    COUNT: `${API_BASE_URL}/api/coupons/count`
   },
   WISHLIST: {
     LIST: `${API_BASE_URL}/api/wishlist`,
@@ -56,7 +56,9 @@ export const API_ENDPOINTS = {
   ACCOUNT: {
     UPDATE: `${API_BASE_URL}/api/users/profile`,
     CHANGE_PASSWORD: `${API_BASE_URL}/api/users/change-password`,
-    PREFERENCES: `${API_BASE_URL}/api/account/preferences`
+    PREFERENCES: `${API_BASE_URL}/api/account/preferences`,
+    TOTAL_SPENT: `${API_BASE_URL}/api/users/total-spent`,
+    ACTIVITY: (limit = 20) => `${API_BASE_URL}/api/activity?limit=${limit}`
   },
   PROMOTIONS: {
     GET: `${API_BASE_URL}/api/promotions`

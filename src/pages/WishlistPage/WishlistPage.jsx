@@ -38,18 +38,55 @@ function WishlistPage() {
     fetchWishlist()
   }, [token, isAuthenticated, navigate])
 
+  // Get locally stored product images
+  const getLocalProductImages = () => {
+    try {
+      const stored = localStorage.getItem('marketgreen_product_images')
+      return stored ? JSON.parse(stored) : {}
+    } catch (error) {
+      console.error('Error loading product images from localStorage:', error)
+      return {}
+    }
+  }
+
+  // Normalize wishlist item from API response to UI format
+  // Images come from local storage, not from API
+  const normalizeWishlistItem = (apiItem) => {
+    const product = apiItem.product || apiItem
+    const productId = product.id || apiItem.product_id || apiItem.productId
+    
+    // Get image from local storage first, fallback to empty string (not from API)
+    const localImages = getLocalProductImages()
+    const localImage = localImages[productId] || ''
+    
+    return {
+      id: apiItem.id || apiItem.wishlist_id,
+      product_id: productId,
+      product: {
+        id: productId,
+        name: product.name || apiItem.name,
+        current_price: Number(product.current_price || product.price || apiItem.price || 0),
+        original_price: Number(product.original_price || product.originalPrice || apiItem.originalPrice || 0),
+        image_url: localImage, // Use local image, not from API
+        main_image: localImage, // Use local image, not from API
+        category: product.category || apiItem.category,
+        rating: Number(product.rating || apiItem.rating || 0),
+        badge: product.badge || product.badges?.[0] || apiItem.badge
+      },
+      added_at: apiItem.added_at || apiItem.created_at || apiItem.createdAt || new Date().toISOString()
+    }
+  }
+
   const fetchWishlist = async () => {
+    if (!token) {
+      setWishlistItems([])
+      setIsLoading(false)
+      return
+    }
+
     setIsLoading(true)
     setError(null)
     
-    // Disabled API calls - using mock data directly for now
-    // TODO: Enable when backend API is ready
-    setTimeout(() => {
-      setWishlistItems(getMockWishlistItems())
-      setIsLoading(false)
-    }, 500) // Small delay to simulate loading
-    
-    /* API calls disabled - uncomment when backend is ready
     try {
       const response = await fetch(API_ENDPOINTS.WISHLIST.LIST, {
         headers: {
@@ -64,7 +101,7 @@ function WishlistPage() {
           return
         }
         if (response.status === 404) {
-          setWishlistItems(getMockWishlistItems())
+          setWishlistItems([])
           setIsLoading(false)
           return
         }
@@ -73,140 +110,17 @@ function WishlistPage() {
 
       const data = await response.json()
       const itemsList = Array.isArray(data) ? data : (data.items || data.wishlist || [])
-      setWishlistItems(itemsList)
+      
+      // Normalize items to use local images
+      const normalizedItems = itemsList.map(normalizeWishlistItem)
+      setWishlistItems(normalizedItems)
     } catch (err) {
       console.error('Error fetching wishlist:', err)
-      setWishlistItems(getMockWishlistItems())
+      setError(err.message || 'Failed to load wishlist')
+      setWishlistItems([])
     } finally {
       setIsLoading(false)
     }
-    */
-  }
-
-  // Mock wishlist items for demo
-  const getMockWishlistItems = () => {
-    return [
-      {
-        id: 1,
-        product_id: 101,
-        product: {
-          id: 101,
-          name: 'Fresh Fruits Combo',
-          image_url: fruitsComboImage,
-          current_price: 118.26,
-          original_price: 162.00,
-          category: 'fruits',
-          rating: 4.5,
-          badge: 'NEW'
-        },
-        added_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 2,
-        product_id: 102,
-        product: {
-          id: 102,
-          name: 'Vegetable Essentials Pack',
-          image_url: vegetablePackImage,
-          current_price: 68.00,
-          original_price: 85.00,
-          category: 'vegetables',
-          rating: 4.0,
-          badge: 'NEW'
-        },
-        added_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 3,
-        product_id: 103,
-        product: {
-          id: 103,
-          name: 'Organic Staples Kit',
-          image_url: staplesKitImage,
-          current_price: 73.60,
-          original_price: 92.00,
-          category: 'staples',
-          rating: 4.8,
-          badge: 'HOT'
-        },
-        added_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 4,
-        product_id: 104,
-        product: {
-          id: 104,
-          name: 'Dairy Delight Pack',
-          image_url: dairyPackImage,
-          current_price: 58.50,
-          original_price: 78.00,
-          category: 'dairy',
-          rating: 4.2,
-          badge: 'NEW'
-        },
-        added_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 5,
-        product_id: 105,
-        product: {
-          id: 105,
-          name: 'Snacks & Munchies Combo',
-          image_url: snacksComboImage,
-          current_price: 68.00,
-          original_price: 85.00,
-          category: 'snacks',
-          rating: 4.3,
-          badge: 'NEW'
-        },
-        added_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 6,
-        product_id: 106,
-        product: {
-          id: 106,
-          name: 'Breakfast Essentials',
-          image_url: breakfastImage,
-          current_price: 73.60,
-          original_price: 92.00,
-          category: 'breakfast',
-          rating: 4.6,
-          badge: 'HOT'
-        },
-        added_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 7,
-        product_id: 107,
-        product: {
-          id: 107,
-          name: 'Healthy Living Kit',
-          image_url: healthKitImage,
-          current_price: 58.50,
-          original_price: 78.00,
-          category: 'health',
-          rating: 4.7,
-          badge: 'NEW'
-        },
-        added_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 8,
-        product_id: 108,
-        product: {
-          id: 108,
-          name: 'Bakery Favorites',
-          image_url: bakeryImage,
-          current_price: 135.00,
-          original_price: 180.00,
-          category: 'bakery',
-          rating: 4.4,
-          badge: 'SELL'
-        },
-        added_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ]
   }
 
   const handleNavigateHome = (e) => {
@@ -230,11 +144,11 @@ function WishlistPage() {
   }
 
   const removeFromWishlist = async (itemId) => {
-    // Disabled API calls - just update local state for now
-    // TODO: Enable when backend API is ready
-    setWishlistItems(wishlistItems.filter(item => item.id !== itemId))
-    
-    /* API calls disabled - uncomment when backend is ready
+    if (!token) {
+      setWishlistItems(wishlistItems.filter(item => item.id !== itemId))
+      return
+    }
+
     try {
       const response = await fetch(API_ENDPOINTS.WISHLIST.REMOVE(itemId), {
         method: 'DELETE',
@@ -247,13 +161,14 @@ function WishlistPage() {
       if (response.ok) {
         setWishlistItems(wishlistItems.filter(item => item.id !== itemId))
       } else {
+        // Optimistically update UI even if API call fails
         setWishlistItems(wishlistItems.filter(item => item.id !== itemId))
       }
     } catch (err) {
       console.error('Error removing from wishlist:', err)
+      // Optimistically update UI even if API call fails
       setWishlistItems(wishlistItems.filter(item => item.id !== itemId))
     }
-    */
   }
 
   const handleAddToCart = (item) => {
@@ -338,7 +253,7 @@ function WishlistPage() {
               {getCartItemCount() > 0 && <span className="cart-badge">{getCartItemCount()}</span>}
             </button>
             <CartDropdown isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-            <button className="shop-now-btn">SHOP NOW</button>
+            <button className="shop-now-btn" onClick={() => navigate('/shop')}>SHOP NOW</button>
           </div>
         </div>
       </header>
