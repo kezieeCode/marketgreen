@@ -109,14 +109,37 @@
   flex: 1;
 }
 
+/* Desktop: Hide mobile icon */
+.user-icon-mobile {
+  display: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  .user-menu-dropdown-wrapper {
+    display: flex;
+    align-items: center;
+  }
+  
+  .user-menu-trigger {
+    padding: 0.5rem;
+    gap: 0;
+  }
+  
   .user-menu-dropdown {
     right: 0;
     min-width: 180px;
   }
   
   .user-greeting {
-    font-size: 0.85rem;
+    display: none; /* Hide username text on mobile */
+  }
+  
+  .user-icon-mobile {
+    display: block; /* Show person icon on mobile */
+  }
+  
+  .dropdown-arrow {
+    display: none; /* Hide dropdown arrow on mobile */
   }
 }

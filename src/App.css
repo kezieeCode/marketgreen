@@ -25,10 +25,16 @@
   gap: 2rem;
 }
 
-.logo {
+.logo-wrapper {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
 
 .logo img {
@@ -314,18 +320,27 @@
   background-color: #4CAF50;
   padding: 1.5rem 2rem;
   color: white;
+  overflow: hidden;
+  position: relative;
 }
 
 .features-container {
-  max-width: 1400px;
-  margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 1.5rem;
   flex-wrap: nowrap;
   white-space: nowrap;
-  overflow-x: auto;
+  animation: scroll-horizontal 30s linear infinite;
+  width: fit-content;
+}
+
+@keyframes scroll-horizontal {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .features-title {
@@ -431,6 +446,8 @@
 
 .category-fresh .category-content {
   margin-top: 2rem;
+  max-width: 50%;
+  padding-right: 1rem;
 }
 
 .category-dairy {
@@ -1959,8 +1976,40 @@
   }
 
   .products-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: #4CAF50 #f0f0f0;
+  }
+
+  .products-grid::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .products-grid::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 10px;
+  }
+
+  .products-grid::-webkit-scrollbar-thumb {
+    background: #4CAF50;
+    border-radius: 10px;
+  }
+
+  .products-grid::-webkit-scrollbar-thumb:hover {
+    background: #45a049;
+  }
+
+  .product-card {
+    flex: 0 0 280px;
+    min-width: 280px;
+    scroll-snap-align: start;
   }
 }
 
@@ -3286,9 +3335,20 @@
     gap: 1rem;
   }
 
+  .logo-wrapper {
+    flex: 1;
+    min-width: 0;
+    margin-left: 1rem;
+  }
+  
   .logo {
     flex: 1;
     min-width: 0;
+  }
+  
+  /* Show hamburger menu on mobile */
+  .mobile-menu-toggle {
+    display: flex !important;
   }
 
   .logo img {
@@ -3296,7 +3356,7 @@
   }
 
   .logo-text {
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
 
   .nav {
@@ -3364,9 +3424,20 @@
     max-width: 300px;
     margin: 0 auto;
   }
+  
+  .hero-image-wrapper {
+    overflow: hidden;
+    height: 250px;
+    width: 250px;
+  }
 
   .hero-fruits-image {
     max-width: 200px;
+    max-height: 200px;
+    border-radius: 50%;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
   }
 
   /* Features Banner Mobile */
@@ -3504,11 +3575,40 @@
   }
 
   .products-grid {
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-direction: row;
     gap: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: #4CAF50 #f0f0f0;
+  }
+
+  .products-grid::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .products-grid::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 10px;
+  }
+
+  .products-grid::-webkit-scrollbar-thumb {
+    background: #4CAF50;
+    border-radius: 10px;
+  }
+
+  .products-grid::-webkit-scrollbar-thumb:hover {
+    background: #45a049;
   }
 
   .product-card {
+    flex: 0 0 280px;
+    min-width: 280px;
+    scroll-snap-align: start;
     padding: 1rem;
   }
 
@@ -3631,7 +3731,20 @@
   }
 
   .products-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 0.5rem;
+  }
+
+  .product-card {
+    flex: 0 0 250px;
+    min-width: 250px;
+    scroll-snap-align: start;
   }
 
   .category-card {
@@ -3661,6 +3774,18 @@
 /* Mobile Menu Toggle Button - Hidden on desktop */
 .mobile-menu-toggle {
   display: none;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #333;
+  transition: color 0.3s;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu-toggle:hover {
+  color: #4CAF50;
 }
 
 /* Mobile Drawer Overlay - Hidden on desktop */
@@ -3680,6 +3805,7 @@
     gap: 0.5rem;
     order: 2; /* Ensure header-actions comes after logo */
   }
+  
 
   /* Shift "Hello, user" dropdown to the right on mobile */
   .user-menu-dropdown-wrapper {
@@ -3688,24 +3814,6 @@
 
   .cart-btn {
     order: 2; /* Position after UserMenuDropdown */
-  }
-
-  .mobile-menu-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    padding: 0.5rem;
-    cursor: pointer;
-    color: #333;
-    z-index: 100;
-    transition: color 0.3s;
-    order: 3; /* Position at the end, after cart */
-  }
-
-  .mobile-menu-toggle:hover {
-    color: #4CAF50;
   }
 
   /* Hide desktop navigation on mobile */
@@ -3777,7 +3885,7 @@
   }
 
   .mobile-drawer-header .logo-text {
-    font-size: 1.25rem;
+    font-size: 0.9rem;
   }
 
   .mobile-drawer-close {

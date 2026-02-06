@@ -152,7 +152,7 @@ function AccountPage() {
   const fetchAccountStats = async () => {
     if (!token) {
       // Use default stats if not authenticated
-      setAccountStats({
+    setAccountStats({
         totalOrders: 0,
         totalSpent: 0,
         wishlistItems: 0,
@@ -185,7 +185,7 @@ function AccountPage() {
 
       // Fetch voucher count from API
       let vouchers = 0
-      try {
+    try {
         const vouchersCountResponse = await fetch(API_ENDPOINTS.COUPONS.COUNT, {
           headers: {
             'Content-Type': 'application/json',
@@ -1084,7 +1084,7 @@ function AccountPage() {
                       <div className="account-loading">
                         <div className="account-loading-spinner"></div>
                         <p>Loading activity...</p>
-                      </div>
+                        </div>
                     ) : activityItems.length === 0 ? (
                       <div className="account-activity-empty">
                         <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1097,16 +1097,16 @@ function AccountPage() {
                         {activityItems.map((activity, index) => (
                           <div key={activity.id || activity.activity_id || index} className="account-activity-item">
                             <div className="account-activity-icon">{getActivityIcon(activity.type || activity.action)}</div>
-                            <div className="account-activity-content">
+                        <div className="account-activity-content">
                               <h4>{getActivityTitle(activity)}</h4>
                               <p>{getActivityDescription(activity)}</p>
                               <span className="account-activity-date">
                                 {formatActivityDate(activity.created_at || activity.createdAt || activity.timestamp || activity.date)}
                               </span>
-                            </div>
-                          </div>
-                        ))}
+                        </div>
                       </div>
+                        ))}
+                        </div>
                     )}
                   </div>
                 )}

@@ -360,12 +360,28 @@ function HomePage() {
       {/* Header */}
       <header className="header">
         <div className="header-container">
-          <div className="logo">
-            <img src={logo} alt="MarketGreen Logo" />
-            <span className="logo-text">
-              <span className="logo-market">Market</span>
-              <span className="logo-green">Green</span>
-            </span>
+          <div className="logo-wrapper">
+            {/* Mobile Hamburger Menu Button - Only visible on mobile, positioned beside logo */}
+            <button 
+              className="mobile-menu-toggle"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {isMobileMenuOpen ? (
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                ) : (
+                  <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                )}
+              </svg>
+            </button>
+            <div className="logo">
+              <img src={logo} alt="MarketGreen Logo" />
+              <span className="logo-text">
+                <span className="logo-market">Market</span>
+                <span className="logo-green">Green</span>
+              </span>
+            </div>
           </div>
           
           <nav className="nav">
@@ -398,20 +414,6 @@ function HomePage() {
               </svg>
             </button>
             <UserMenuDropdown />
-            {/* Mobile Hamburger Menu Button - Only visible on mobile, positioned next to cart */}
-            <button 
-              className="mobile-menu-toggle"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {isMobileMenuOpen ? (
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                ) : (
-                  <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                )}
-              </svg>
-            </button>
             <button className="icon-btn cart-btn" onClick={() => setIsCartOpen(!isCartOpen)}>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M1 1H3L3.4 3M5 11H15L19 3H3.4M5 11L3.4 3M5 11L2.70711 13.2929C2.07714 13.9229 2.52331 15 3.41421 15H15M15 15C13.8954 15 13 15.8954 13 17C13 18.1046 13.8954 19 15 19C16.1046 19 17 18.1046 17 17C17 15.8954 16.1046 15 15 15ZM7 17C7 18.1046 6.10457 19 5 19C3.89543 19 3 18.1046 3 17C3 15.8954 3.89543 15 5 15C6.10457 15 7 15.8954 7 17Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -455,6 +457,33 @@ function HomePage() {
       {/* Bottom Banner */}
       <section className="features-banner">
         <div className="features-container">
+          <span className="features-title">Find Everything You Need, Fresh & Fast</span>
+          <span className="features-divider">|</span>
+          <span className="feature-item">
+            <img src={appleImage} alt="Apple" className="feature-icon" />
+            <span>Fresh Groceries</span>
+          </span>
+          <span className="features-divider">|</span>
+          <span className="feature-item">
+            <span className="feature-icon-text">!</span>
+            <span>Daily Needs</span>
+          </span>
+          <span className="features-divider">|</span>
+          <span className="feature-item">
+            <span className="feature-icon-text">+</span>
+            <span>Pantry Essentials</span>
+          </span>
+          <span className="features-divider">|</span>
+          <span className="feature-item">
+            <span className="feature-icon-text">🏃</span>
+            <span>Healthy Living</span>
+          </span>
+          <span className="features-divider">|</span>
+          <span className="feature-item">
+            <span className="feature-icon-text">🚚</span>
+            <span>Quick Delivery</span>
+          </span>
+          {/* Duplicate content for seamless loop */}
           <span className="features-title">Find Everything You Need, Fresh & Fast</span>
           <span className="features-divider">|</span>
           <span className="feature-item">
