@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { useCart } from './context/CartContext.jsx'
 import { useNavigation } from './context/NavigationContext.jsx'
@@ -69,11 +69,12 @@ function HomePage() {
   const { token, isAuthenticated } = useAuth()
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [timeLeft, setTimeLeft] = useState({
-    days: 676,
-    hours: 8,
-    minutes: 3,
-    seconds: 20
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
   })
+  const countdownTimerRef = useRef(null)
   const [featuredProducts, setFeaturedProducts] = useState([])
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(false)
   const [trendyProducts, setTrendyProducts] = useState([])
@@ -145,22 +146,43 @@ function HomePage() {
 
   // Update countdown timer based on promotion
   useEffect(() => {
-    console.log('⏰ Countdown useEffect triggered. Current promotion:', promotion)
+    // Clear any existing timer
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current)
+      countdownTimerRef.current = null
+    }
     
     if (!promotion?.countdownEndDate) {
       console.log('⚠️ No countdownEndDate in promotion, skipping countdown setup')
+      setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
       return
     }
 
     const endDate = new Date(promotion.countdownEndDate)
-    console.log('⏰ Setting up countdown timer. End date:', endDate, 'Current date:', new Date())
+    console.log('⏰ Setting up countdown timer. End date:', endDate.toISOString(), 'Current date:', new Date().toISOString())
+    
+    // Validate the date
+    if (isNaN(endDate.getTime())) {
+      console.error('❌ Invalid countdownEndDate:', promotion.countdownEndDate)
+      setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+      return
+    }
     
     const updateCountdown = () => {
       const now = new Date()
-      const diff = endDate - now
+      const diff = endDate.getTime() - now.getTime()
       
       if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+        setTimeLeft(prev => {
+          if (prev.days !== 0 || prev.hours !== 0 || prev.minutes !== 0 || prev.seconds !== 0) {
+            return { days: 0, hours: 0, minutes: 0, seconds: 0 }
+          }
+          return prev
+        })
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current)
+          countdownTimerRef.current = null
+        }
         return
       }
       
@@ -169,13 +191,31 @@ function HomePage() {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
       const seconds = Math.floor((diff % (1000 * 60)) / 1000)
       
-      setTimeLeft({ days, hours, minutes, seconds })
+      setTimeLeft(prev => {
+        // Only update if values changed to avoid unnecessary re-renders
+        if (prev.days !== days || prev.hours !== hours || prev.minutes !== minutes || prev.seconds !== seconds) {
+          return { days, hours, minutes, seconds }
+        }
+        return prev
+      })
     }
     
+    // Initial update
     updateCountdown()
-    const timer = setInterval(updateCountdown, 1000)
+    
+    // Set up interval to update every second
+    countdownTimerRef.current = setInterval(() => {
+      updateCountdown()
+    }, 1000)
+    console.log('✅ Countdown timer interval set up, timer ID:', countdownTimerRef.current)
 
-    return () => clearInterval(timer)
+    return () => {
+      console.log('🧹 Cleaning up countdown timer')
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current)
+        countdownTimerRef.current = null
+      }
+    }
   }, [promotion])
 
   useEffect(() => {
