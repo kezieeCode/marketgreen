@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
+import { useToast } from '../../context/ToastContext.jsx'
 import SuccessDialog from '../../components/SuccessDialog.jsx'
-import ToastContainer from '../../components/ToastContainer.jsx'
-import { useToast } from '../../hooks/useToast.js'
 import '../../App.css'
 import logo from '../../assets/images/logo.png'
 import { API_ENDPOINTS } from '../../config/api.js'
@@ -11,7 +10,7 @@ import { API_ENDPOINTS } from '../../config/api.js'
 function SignUpPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
-  const { toasts, showToast, removeToast } = useToast()
+  const { showToast } = useToast()
   const [isLogin, setIsLogin] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -194,11 +193,13 @@ function SignUpPage() {
     const result = await login(formData.email, formData.password)
 
     if (result.success) {
-      // Show success message
-      console.log('Login successful')
+      // Show success toast notification
+      showToast('Welcome back! You have successfully signed in.', 'success', 4000)
       
-      // Redirect to home page
-      navigate('/')
+      // Small delay to ensure toast renders before navigation
+      setTimeout(() => {
+        navigate('/')
+      }, 100)
     } else {
       // Handle different error scenarios
       if (result.field === 'email') {
@@ -234,7 +235,6 @@ function SignUpPage() {
 
   return (
     <div className="App signup-page">
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
       <SuccessDialog 
         isOpen={showSuccessDialog} 
         onClose={handleDialogClose}

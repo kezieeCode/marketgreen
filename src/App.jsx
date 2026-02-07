@@ -3,9 +3,11 @@ import { Routes, Route, useNavigate } from 'react-router-dom'
 import { useCart } from './context/CartContext.jsx'
 import { useNavigation } from './context/NavigationContext.jsx'
 import { useAuth } from './context/AuthContext.jsx'
+import { useToast } from './context/ToastContext.jsx'
 import CartDropdown from './components/CartDropdown.jsx'
 import UserMenuDropdown from './components/UserMenuDropdown.jsx'
 import NavigationLoader from './components/NavigationLoader.jsx'
+import ToastContainer from './components/ToastContainer.jsx'
 import './App.css'
 import ProductDetail from './pages/ProductDetail/ProductDetail.jsx'
 import { API_ENDPOINTS } from './config/api.js'
@@ -1648,9 +1650,12 @@ function HomePage() {
 }
 
 function App() {
+  const { toasts, removeToast } = useToast()
+  
   return (
     <>
       <NavigationLoader />
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
