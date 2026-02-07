@@ -9,7 +9,7 @@ import { API_ENDPOINTS } from '../../config/api.js'
 
 function SignUpPage() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, setAuthFromSession } = useAuth()
   const { showToast } = useToast()
   const [isLogin, setIsLogin] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -58,9 +58,6 @@ function SignUpPage() {
     setPasswordErrors([])
     setFieldErrors({})
 
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:46',message:'Frontend - signup request initiated',data:{apiEndpoint:API_ENDPOINTS.AUTH.SIGNUP,hasEmail:!!formData.email,hasUsername:!!formData.username,hasFullName:!!formData.fullName,hasPhoneNumber:!!formData.phoneNumber,hasPassword:!!formData.password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
 
     try {
       console.log('Calling signup API:', API_ENDPOINTS.AUTH.SIGNUP)
@@ -80,9 +77,6 @@ function SignUpPage() {
         })
       })
 
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:68',message:'Frontend - signup response received',data:{status:response.status,statusText:response.statusText,ok:response.ok,contentType:response.headers.get('content-type')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
 
       // Check if response is ok before trying to parse JSON
       let data
@@ -104,13 +98,7 @@ function SignUpPage() {
           return
         }
         
-        // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:73',message:'Frontend - signup response parsed',data:{hasError:!!data.error,hasField:!!data.field,errorMessage:data.error?.substring(0,100)||null,fullResponse:JSON.stringify(data).substring(0,500)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
       } catch (textError) {
-        // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:75',message:'Frontend - response text error',data:{status:response.status,statusText:response.statusText,textError:textError.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
         console.error('Error reading response:', textError)
         console.error('Response status:', response.status)
         console.error('Response statusText:', response.statusText)
@@ -120,24 +108,19 @@ function SignUpPage() {
       }
 
       if (response.ok) {
-        // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:81',message:'Frontend - signup success',data:{hasSession:!!data.session,hasUser:!!data.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
-        // Store session token if available
-        if (data.session?.access_token) {
-          localStorage.setItem('token', data.session.access_token)
-          localStorage.setItem('user', JSON.stringify(data.user))
+        // Automatically log in the user using the session data from signup
+        if (setAuthFromSession(data)) {
+          // Show toast notification
+          showToast('Account created successfully! Welcome to MarketGreen!', 'success', 4000)
+          
+          // Show success dialog
+          setShowSuccessDialog(true)
+        } else {
+          // If no session data, still show success but user needs to login
+          showToast('Account created successfully! Please log in.', 'success', 4000)
+          setShowSuccessDialog(true)
         }
-        
-        // Show toast notification
-        showToast('Account created successfully! Welcome to MarketGreen!', 'success', 4000)
-        
-        // Show success dialog
-        setShowSuccessDialog(true)
       } else {
-        // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:91',message:'Frontend - signup error response',data:{status:response.status,error:data.error,field:data.field,hasRequirements:!!data.requirements,fullErrorData:JSON.stringify(data)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
         console.error('Signup error response:', {
           status: response.status,
           statusText: response.statusText,
@@ -156,9 +139,6 @@ function SignUpPage() {
         }
       }
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:100',message:'Frontend - signup network error',data:{errorMessage:error.message,errorName:error.name,isFailedFetch:error.message.includes('Failed to fetch'),isNetworkError:error.message.includes('NetworkError'),errorStack:error.stack?.substring(0,300)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
       console.error('Signup network error:', error)
       console.error('Error name:', error.name)
       console.error('Error message:', error.message)

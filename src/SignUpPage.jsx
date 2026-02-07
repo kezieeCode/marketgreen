@@ -51,7 +51,6 @@ function SignUpPage() {
     setFieldErrors({})
 
     // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:46',message:'Frontend - signup request initiated',data:{apiEndpoint:API_ENDPOINTS.AUTH.SIGNUP,hasEmail:!!formData.email,hasUsername:!!formData.username,hasPassword:!!formData.password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
     // #endregion
 
     try {
@@ -71,7 +70,6 @@ function SignUpPage() {
       })
 
       // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:68',message:'Frontend - signup response received',data:{status:response.status,statusText:response.statusText,ok:response.ok,contentType:response.headers.get('content-type')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
       // #endregion
 
       // Check if response is ok before trying to parse JSON
@@ -95,11 +93,9 @@ function SignUpPage() {
         }
         
         // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:73',message:'Frontend - signup response parsed',data:{hasError:!!data.error,hasField:!!data.field,errorMessage:data.error?.substring(0,100)||null,fullResponse:JSON.stringify(data).substring(0,500)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
         // #endregion
       } catch (textError) {
         // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:75',message:'Frontend - response text error',data:{status:response.status,statusText:response.statusText,textError:textError.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
         // #endregion
         console.error('Error reading response:', textError)
         console.error('Response status:', response.status)
@@ -111,7 +107,6 @@ function SignUpPage() {
 
       if (response.ok) {
         // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:81',message:'Frontend - signup success',data:{hasSession:!!data.session,hasUser:!!data.user},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
         // #endregion
         // Store session token if available
         if (data.session?.access_token) {
@@ -124,7 +119,6 @@ function SignUpPage() {
         navigate('/')
       } else {
         // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:91',message:'Frontend - signup error response',data:{status:response.status,error:data.error,field:data.field,hasRequirements:!!data.requirements,fullErrorData:JSON.stringify(data)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
         // #endregion
         console.error('Signup error response:', {
           status: response.status,
@@ -145,7 +139,6 @@ function SignUpPage() {
       }
     } catch (error) {
       // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:100',message:'Frontend - signup network error',data:{errorMessage:error.message,errorName:error.name,isFailedFetch:error.message.includes('Failed to fetch'),isNetworkError:error.message.includes('NetworkError'),errorStack:error.stack?.substring(0,300)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
       // #endregion
       console.error('Signup network error:', error)
       console.error('Error name:', error.name)

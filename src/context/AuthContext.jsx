@@ -81,6 +81,33 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Helper function to set auth state from session data (used for both login and signup)
+  const setAuthFromSession = (sessionData) => {
+    if (sessionData?.session?.access_token) {
+      const accessToken = sessionData.session.access_token
+      setToken(accessToken)
+      localStorage.setItem('token', accessToken)
+      
+      if (sessionData.session.refresh_token) {
+        localStorage.setItem('refresh_token', sessionData.session.refresh_token)
+      }
+
+      // Store user data if provided in response
+      if (sessionData.user) {
+        setUser(sessionData.user)
+        localStorage.setItem('user', JSON.stringify(sessionData.user))
+      } else {
+        // Fetch user info if not provided in response
+        fetchUserInfo(accessToken).catch(() => {
+          console.warn('Failed to fetch user info after setting auth')
+        })
+      }
+
+      return true
+    }
+    return false
+  }
+
   const login = async (email, password) => {
     try {
       const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
@@ -97,25 +124,8 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json()
 
       if (response.ok) {
-        // Store session token and refresh token
-        if (data.session?.access_token) {
-          const accessToken = data.session.access_token
-          setToken(accessToken)
-          localStorage.setItem('token', accessToken)
-          
-          if (data.session.refresh_token) {
-            localStorage.setItem('refresh_token', data.session.refresh_token)
-          }
-
-          // Store user data if provided in response
-          if (data.user) {
-            setUser(data.user)
-            localStorage.setItem('user', JSON.stringify(data.user))
-          } else {
-            // Fetch user info if not provided in login response
-            await fetchUserInfo(accessToken)
-          }
-
+        // Use helper function to set auth state
+        if (setAuthFromSession(data)) {
           return { success: true, data }
         } else {
           return { success: false, error: 'No access token received' }
@@ -181,7 +191,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated,
-    fetchUserInfo
+    fetchUserInfo,
+    setAuthFromSession
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
