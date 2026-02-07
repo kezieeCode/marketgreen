@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
+import SuccessDialog from '../../components/SuccessDialog.jsx'
+import ToastContainer from '../../components/ToastContainer.jsx'
+import { useToast } from '../../hooks/useToast.js'
 import '../../App.css'
 import logo from '../../assets/images/logo.png'
 import { API_ENDPOINTS } from '../../config/api.js'
@@ -8,6 +11,7 @@ import { API_ENDPOINTS } from '../../config/api.js'
 function SignUpPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const { toasts, showToast, removeToast } = useToast()
   const [isLogin, setIsLogin] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -15,6 +19,7 @@ function SignUpPage() {
   const [passwordErrors, setPasswordErrors] = useState([])
   const [fieldErrors, setFieldErrors] = useState({})
   const [marketingEmails, setMarketingEmails] = useState(false)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -125,9 +130,11 @@ function SignUpPage() {
           localStorage.setItem('user', JSON.stringify(data.user))
         }
         
-        // Show success message and redirect
-        alert('Account created successfully!')
-        navigate('/')
+        // Show toast notification
+        showToast('Account created successfully! Welcome to MarketGreen!', 'success', 4000)
+        
+        // Show success dialog
+        setShowSuccessDialog(true)
       } else {
         // #region agent log
         fetch('http://127.0.0.1:7244/ingest/a231184e-915a-41f4-b027-e9b8c209d3b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SignUpPage.jsx:91',message:'Frontend - signup error response',data:{status:response.status,error:data.error,field:data.field,hasRequirements:!!data.requirements,fullErrorData:JSON.stringify(data)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
@@ -220,8 +227,19 @@ function SignUpPage() {
     }
   }
 
+  const handleDialogClose = () => {
+    setShowSuccessDialog(false)
+    navigate('/')
+  }
+
   return (
     <div className="App signup-page">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+      <SuccessDialog 
+        isOpen={showSuccessDialog} 
+        onClose={handleDialogClose}
+        userName={formData.fullName || formData.username}
+      />
       <div className="signup-container">
         {/* Left Column - Sign Up Form */}
         <div className="signup-form-column">

@@ -1,0 +1,212 @@
+.success-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease-out;
+  padding: 20px;
+}
+
+.success-dialog {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 100%;
+  animation: slideUp 0.4s ease-out;
+  overflow: hidden;
+}
+
+.success-dialog-content {
+  padding: 48px 32px;
+  text-align: center;
+  position: relative;
+}
+
+.success-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  margin-bottom: 24px;
+}
+
+.success-icon-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 8px 24px rgba(76, 175, 80, 0.3);
+  animation: scaleIn 0.5s ease-out;
+}
+
+.success-icon-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(76, 175, 80, 0.2);
+  animation: pulse 2s ease-out infinite;
+  z-index: 1;
+}
+
+.success-dialog-logo {
+  margin-bottom: 20px;
+}
+
+.success-dialog-logo img {
+  height: 60px;
+  width: auto;
+}
+
+.success-dialog-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 16px;
+  line-height: 1.3;
+}
+
+.success-market {
+  color: #000000;
+}
+
+.success-green {
+  color: #4CAF50;
+}
+
+.success-dialog-message {
+  font-size: 16px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.success-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+  text-align: left;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.success-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #555;
+}
+
+.success-feature-item svg {
+  flex-shrink: 0;
+}
+
+.success-dialog-button {
+  width: 100%;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.success-dialog-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.success-dialog-button:active {
+  transform: translateY(0);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.4);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .success-dialog {
+    max-width: 90%;
+    border-radius: 20px;
+  }
+
+  .success-dialog-content {
+    padding: 32px 24px;
+  }
+
+  .success-dialog-title {
+    font-size: 24px;
+  }
+
+  .success-icon-circle {
+    width: 64px;
+    height: 64px;
+  }
+
+  .success-icon-circle svg {
+    width: 36px;
+    height: 36px;
+  }
+}
