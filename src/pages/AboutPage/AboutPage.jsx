@@ -116,13 +116,8 @@ function AboutPage() {
               We are Qualified &amp; <br />
               Professional<span className="about-title-dot">.</span>
             </h2>
-            <p className="about-section-lead">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore.
-            </p>
             <p className="about-section-body">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-              Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure
-              dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+              We are an agro tech company, concerned with catering for the needs of university students who find it difficult visiting the market, we are Al powered and provide solutions to problems resulting as a result of poor infrastructure through the use of real time data and which enables us to become the connecting network between the Market and Consumers.
             </p>
 
             <div className="about-services-grid">
@@ -155,72 +150,36 @@ function AboutPage() {
           <div className="about-services-cards">
             <article className="about-service-card">
               <div className="about-service-image-wrapper">
-                <img src={serviceImage1} alt="Organic Vegetables" className="about-service-image" />
+                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop" alt="Data Analysis and AI services" className="about-service-image" />
               </div>
               <div className="about-service-content">
-                <h3 className="about-service-title">Organic Vegetables</h3>
+                <h3 className="about-service-title">Data Analysis and AI services</h3>
                 <p className="about-service-text">
-                  Lorem ipsum dolor sit amet cons ectet ur adipiscing elit sed do eiusmod te incididunt ut labore.
+                  Decision support & Market trends
                 </p>
               </div>
             </article>
 
             <article className="about-service-card">
               <div className="about-service-image-wrapper">
-                <img src={serviceImage2} alt="Organic Meat" className="about-service-image" />
+                <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800&h=600&fit=crop" alt="Input supply and marketplace" className="about-service-image" />
               </div>
               <div className="about-service-content">
-                <h3 className="about-service-title">Organic Meat</h3>
+                <h3 className="about-service-title">Input supply and marketplace</h3>
                 <p className="about-service-text">
-                  Lorem ipsum dolor sit amet cons ectet ur adipiscing elit sed do eiusmod te incididunt ut labore.
+                  Connecting farmers to traders and final consumers(online marketplace), equipment rental and bulk input services.
                 </p>
               </div>
             </article>
 
             <article className="about-service-card">
               <div className="about-service-image-wrapper">
-                <img src={serviceImage3} alt="Firm Fresh Fruits" className="about-service-image" />
+                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop" alt="Advisory and Extension Services" className="about-service-image" />
               </div>
               <div className="about-service-content">
-                <h3 className="about-service-title">Firm Fresh Fruits</h3>
+                <h3 className="about-service-title">Advisory and Extension Services</h3>
                 <p className="about-service-text">
-                  Lorem ipsum dolor sit amet cons ectet ur adipiscing elit sed do eiusmod te incididunt ut labore.
-                </p>
-              </div>
-            </article>
-
-            <article className="about-service-card">
-              <div className="about-service-image-wrapper">
-                <img src={serviceImage4} alt="Organic Vegetables" className="about-service-image" />
-              </div>
-              <div className="about-service-content">
-                <h3 className="about-service-title">Organic Vegetables</h3>
-                <p className="about-service-text">
-                  Lorem ipsum dolor sit amet cons ectet ur adipiscing elit sed do eiusmod te incididunt ut labore.
-                </p>
-              </div>
-            </article>
-
-            <article className="about-service-card">
-              <div className="about-service-image-wrapper">
-                <img src={serviceImage5} alt="Organic Vegetables" className="about-service-image" />
-              </div>
-              <div className="about-service-content">
-                <h3 className="about-service-title">Organic Vegetables</h3>
-                <p className="about-service-text">
-                  Lorem ipsum dolor sit amet cons ectet ur adipiscing elit sed do eiusmod te incididunt ut labore.
-                </p>
-              </div>
-            </article>
-
-            <article className="about-service-card">
-              <div className="about-service-image-wrapper">
-                <img src={serviceImage6} alt="Organic Vegetables" className="about-service-image" />
-              </div>
-              <div className="about-service-content">
-                <h3 className="about-service-title">Organic Vegetables</h3>
-                <p className="about-service-text">
-                  Lorem ipsum dolor sit amet cons ectet ur adipiscing elit sed do eiusmod te incididunt ut labore.
+                  Expert guidance using digital channels,remote consultation with agronomist & sms/ WhatsApp-based alert
                 </p>
               </div>
             </article>
@@ -331,12 +290,9 @@ function AboutPage() {
             <div className="footer-column">
               <h4 className="footer-column-title">Company</h4>
               <ul className="footer-links">
-                <li><a href="#about">About</a></li>
-                <li><a href="#blog">Blog</a></li>
-                <li><a href="#products">All Products</a></li>
-                <li><a href="#locations">Locations Map</a></li>
-                <li><a href="#faq">FAQ</a></li>
-                <li><a href="#contact">Contact us</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/about'); }}>About</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/shop'); }}>All Products</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/contact'); }}>Contact us</a></li>
               </ul>
             </div>
 
@@ -344,12 +300,10 @@ function AboutPage() {
             <div className="footer-column">
               <h4 className="footer-column-title">Services.</h4>
               <ul className="footer-links">
-                <li><a href="#tracking">Order tracking</a></li>
-                <li><a href="#wishlist">Wish List</a></li>
-                <li><a href="#login">Login</a></li>
-                <li><a href="#account">My account</a></li>
-                <li><a href="#terms">Terms & Conditions</a></li>
-                <li><a href="#promotions">Promotional Offers</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/orders'); }}>Order tracking</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/wishlist'); }}>Wish List</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/signup'); }}>Login</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/account'); }}>My account</a></li>
               </ul>
             </div>
 
@@ -357,12 +311,9 @@ function AboutPage() {
             <div className="footer-column">
               <h4 className="footer-column-title">Customer Care</h4>
               <ul className="footer-links">
-                <li><a href="#login">Login</a></li>
-                <li><a href="#account">My account</a></li>
-                <li><a href="#wishlist">Wish List</a></li>
-                <li><a href="#tracking">Order tracking</a></li>
-                <li><a href="#faq">FAQ</a></li>
-                <li><a href="#contact">Contact us</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/wishlist'); }}>Wish List</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/orders'); }}>Order tracking</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/contact'); }}>Contact us</a></li>
               </ul>
             </div>
 
@@ -394,11 +345,7 @@ function AboutPage() {
               <span className="footer-green">Green</span> 2025
             </p>
             <div className="footer-legal">
-              <a href="#terms">Terms & Conditions</a>
-              <span className="legal-divider">|</span>
-              <a href="#claim">Claim</a>
-              <span className="legal-divider">|</span>
-              <a href="#privacy">Privacy & Policy</a>
+              {/* Legal links removed - no corresponding pages */}
             </div>
           </div>
         </div>

@@ -22,23 +22,6 @@ import diaryImage from './assets/images/pictures/diary.png'
 import staplesImage from './assets/images/pictures/staples.png'
 import snacksImage from './assets/images/pictures/snacks.png'
 import householdImage from './assets/images/pictures/household.png'
-import tomatoesImage from './assets/images/pictures/tomatoes.png'
-import masromImage from './assets/images/pictures/masrom.png'
-import orangeImage from './assets/images/pictures/orange.png'
-import kiwiImage from './assets/images/pictures/kiwi.png'
-import juiceImage from './assets/images/pictures/juice.png'
-import guavaImage from './assets/images/pictures/guava.png'
-import delightImage from './assets/images/pictures/delight.png'
-import avocadoImage from './assets/images/pictures/avocado.png'
-import honeyImage from './assets/images/pictures/honey.png'
-import fruitsComboImage from './assets/images/products/fruits.png'
-import vegetablePackImage from './assets/images/products/vegies.png'
-import staplesKitImage from './assets/images/products/grains.png'
-import dairyPackImage from './assets/images/products/milk.png'
-import snacksComboImage from './assets/images/products/munchies.png'
-import breakfastImage from './assets/images/products/breakfast.png'
-import healthKitImage from './assets/images/products/health.png'
-import bakeryImage from './assets/images/products/bakery.png'
 import plantsImage from './assets/images/pictures/plants.png'
 import testimonial1Image from './assets/images/testimonials/man.png'
 import testimonial2Image from './assets/images/testimonials/second_man.png'
@@ -77,14 +60,16 @@ function HomePage() {
     seconds: 0
   })
   const countdownTimerRef = useRef(null)
+  const featuredProductsLoadedRef = useRef(false)
+  const trendyProductsLoadedRef = useRef(false)
   const [featuredProducts, setFeaturedProducts] = useState([])
-  const [isLoadingFeatured, setIsLoadingFeatured] = useState(false)
+  const [isLoadingFeatured, setIsLoadingFeatured] = useState(true)
   const [trendyProducts, setTrendyProducts] = useState([])
-  const [isLoadingTrendy, setIsLoadingTrendy] = useState(false)
+  const [isLoadingTrendy, setIsLoadingTrendy] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('vegetables')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [promotion, setPromotion] = useState(null)
-  const [isLoadingPromotion, setIsLoadingPromotion] = useState(false)
+  const [isLoadingPromotion, setIsLoadingPromotion] = useState(true)
   const [wishlistItems, setWishlistItems] = useState([])
   const [addingToWishlist, setAddingToWishlist] = useState(null)
 
@@ -222,10 +207,18 @@ function HomePage() {
 
   useEffect(() => {
     const controller = new AbortController()
+    let isMounted = true
+    
+    // Ensure loading state is true when fetch starts
+    setIsLoadingFeatured(true)
 
     async function fetchFeaturedProducts() {
+      // Use requestAnimationFrame to ensure loading state is rendered before fetch starts
+      await new Promise(resolve => requestAnimationFrame(resolve))
+      
+      if (!isMounted) return
+      
       try {
-        setIsLoadingFeatured(true)
         const response = await fetch(API_ENDPOINTS.PRODUCTS.FEATURED, {
           signal: controller.signal
         })
@@ -237,28 +230,48 @@ function HomePage() {
         const data = await response.json()
         const items = Array.isArray(data?.products) ? data.products : []
 
-        setFeaturedProducts(items)
+        // Only update if component is still mounted
+        if (isMounted) {
+          setFeaturedProducts(items)
+          setIsLoadingFeatured(false)
+          featuredProductsLoadedRef.current = true
+        }
       } catch (error) {
         if (error.name !== 'AbortError') {
           console.error('Error fetching featured products', error)
+          if (isMounted) {
+            setFeaturedProducts([])
+            setIsLoadingFeatured(false)
+            featuredProductsLoadedRef.current = true
+          }
         }
-      } finally {
-        setIsLoadingFeatured(false)
       }
     }
 
     fetchFeaturedProducts()
 
-    return () => controller.abort()
+    return () => {
+      isMounted = false
+      controller.abort()
+    }
   }, [])
 
   // Fetch trendy products by category
   useEffect(() => {
     const controller = new AbortController()
+    let isMounted = true
+    
+    // Set loading to true and reset loaded flag when category changes
+    setIsLoadingTrendy(true)
+    trendyProductsLoadedRef.current = false
 
     async function fetchTrendyProducts() {
+      // Use requestAnimationFrame to ensure loading state is rendered before fetch starts
+      await new Promise(resolve => requestAnimationFrame(resolve))
+      
+      if (!isMounted) return
+      
       try {
-        setIsLoadingTrendy(true)
         const response = await fetch(API_ENDPOINTS.PRODUCTS.BY_CATEGORY(selectedCategory), {
           signal: controller.signal
         })
@@ -270,20 +283,30 @@ function HomePage() {
         const data = await response.json()
         const items = Array.isArray(data?.products) ? data.products : []
 
-        setTrendyProducts(items)
+        // Only update if component is still mounted
+        if (isMounted) {
+          setTrendyProducts(items)
+          setIsLoadingTrendy(false)
+          trendyProductsLoadedRef.current = true
+        }
       } catch (error) {
         if (error.name !== 'AbortError') {
           console.error('Error fetching trendy products', error)
-          setTrendyProducts([])
+          if (isMounted) {
+            setTrendyProducts([])
+            setIsLoadingTrendy(false)
+            trendyProductsLoadedRef.current = true
+          }
         }
-      } finally {
-        setIsLoadingTrendy(false)
       }
     }
 
     fetchTrendyProducts()
 
-    return () => controller.abort()
+    return () => {
+      isMounted = false
+      controller.abort()
+    }
   }, [selectedCategory])
 
   // Fetch wishlist items
@@ -659,9 +682,17 @@ function HomePage() {
           </nav>
 
           <div className="products-grid">
-            {isLoadingTrendy ? (
-              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
-                <div style={{ fontSize: '1.2rem', color: '#666' }}>Loading products...</div>
+            {(isLoadingTrendy || !trendyProductsLoadedRef.current) ? (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem' }}>
+                <div className="loading-spinner" style={{
+                  width: '50px',
+                  height: '50px',
+                  border: '4px solid #f3f3f3',
+                  borderTop: '4px solid #4CAF50',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto'
+                }}></div>
               </div>
             ) : trendyProducts.length > 0 ? (
               trendyProducts.map((product) => {
@@ -684,6 +715,7 @@ function HomePage() {
                         ? 'badge-sell'
                         : 'badge-new'
                     : null
+                const productImage = product.image_url || product.main_image
 
                 return (
                   <div
@@ -698,11 +730,23 @@ function HomePage() {
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="product-image-wrapper">
-                      <img
-                        src={product.image_url || product.main_image || tomatoesImage}
-                        alt={product.name}
-                        className="product-image"
-                      />
+                      {productImage ? (
+                        <img
+                          src={productImage}
+                          alt={product.name}
+                          className="product-image"
+                        />
+                      ) : (
+                        <div className="loading-spinner" style={{
+                          width: '40px',
+                          height: '40px',
+                          border: '3px solid #f3f3f3',
+                          borderTop: '3px solid #4CAF50',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite',
+                          margin: 'auto'
+                        }}></div>
+                      )}
                       {badgeClass && (
                         <span className={`product-badge ${badgeClass}`}>
                           {String(badge).toUpperCase()}
@@ -762,9 +806,18 @@ function HomePage() {
       </section>
 
       {/* Hot Deal Section */}
-      {(() => {
-        console.log('🎨 Hot Deal Render Check - isLoadingPromotion:', isLoadingPromotion, 'promotion:', promotion)
-        return !isLoadingPromotion && promotion && (
+      {isLoadingPromotion ? (
+        <section className="hot-deal" style={{ backgroundColor: '#FEF3C7', minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="loading-spinner" style={{
+            width: '60px',
+            height: '60px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #4CAF50',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+        </section>
+      ) : promotion ? (
         <section 
           className="hot-deal" 
           style={{ 
@@ -774,11 +827,23 @@ function HomePage() {
         >
           <div className="hot-deal-container">
             <div className="hot-deal-image-wrapper">
-              <img 
-                src={promotion.productImage || honeyImage} 
-                alt={promotion.mainTitle || "Hot Deal"} 
-                className="hot-deal-image" 
-              />
+              {promotion.productImage ? (
+                <img 
+                  src={promotion.productImage} 
+                  alt={promotion.mainTitle || "Hot Deal"} 
+                  className="hot-deal-image" 
+                />
+              ) : (
+                <div className="loading-spinner" style={{
+                  width: '60px',
+                  height: '60px',
+                  border: '4px solid #f3f3f3',
+                  borderTop: '4px solid #4CAF50',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: 'auto'
+                }}></div>
+              )}
             </div>
             
             <div className="hot-deal-content">
@@ -828,8 +893,7 @@ function HomePage() {
             </div>
           </div>
         </section>
-        )
-      })()}
+      ) : null}
 
       {/* Featured Products Section */}
       <section className="featured-products">
@@ -837,7 +901,19 @@ function HomePage() {
           <h2 className="featured-products-title">Featured Products</h2>
           
           <div className="featured-grid">
-            {featuredProducts.length > 0 ? (
+            {(isLoadingFeatured || !featuredProductsLoadedRef.current) ? (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem' }}>
+                <div className="loading-spinner" style={{
+                  width: '50px',
+                  height: '50px',
+                  border: '4px solid #f3f3f3',
+                  borderTop: '4px solid #4CAF50',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto'
+                }}></div>
+              </div>
+            ) : featuredProducts.length > 0 ? (
               featuredProducts.slice(0, 8).map((product) => {
                 const price = Number(product.current_price ?? product.price)
                 const originalPrice = Number(
@@ -858,6 +934,7 @@ function HomePage() {
                         ? 'badge-sell'
                         : 'badge-new'
                     : null
+                const productImage = product.image_url || product.main_image
 
                 return (
                   <div
@@ -873,11 +950,23 @@ function HomePage() {
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="featured-image-wrapper">
-                      <img
-                        src={product.image_url || product.main_image || fruitsComboImage}
-                        alt={product.name}
-                        className="featured-image"
-                      />
+                      {productImage ? (
+                        <img
+                          src={productImage}
+                          alt={product.name}
+                          className="featured-image"
+                        />
+                      ) : (
+                        <div className="loading-spinner" style={{
+                          width: '40px',
+                          height: '40px',
+                          border: '3px solid #f3f3f3',
+                          borderTop: '3px solid #4CAF50',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite',
+                          margin: 'auto'
+                        }}></div>
+                      )}
                       {badgeClass && (
                         <span className={`featured-badge ${badgeClass}`}>
                           {String(badge).toUpperCase()}
@@ -909,249 +998,9 @@ function HomePage() {
                 )
               })
             ) : (
-              <>
-                {/* Row 1 */}
-                <div
-                  className="featured-card"
-                  onClick={() => {
-                    setNavigating(true)
-                    navigate('/product/fresh-fruits-combo')
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="featured-image-wrapper">
-                    <img
-                      src={fruitsComboImage}
-                      alt="Fresh Fruits Combo"
-                      className="featured-image"
-                    />
-                    <span className="featured-badge badge-new">NEW</span>
-                  </div>
-                  <h3 className="featured-name">Fresh Fruits Combo</h3>
-                  <div className="featured-rating">
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star">★</span>
-                    <span className="star">★</span>
-                  </div>
-                  <div className="featured-price">
-                    <span className="current-price">₦118.26</span>
-                    <span className="original-price">₦162.00</span>
-                  </div>
-                </div>
-
-                <div
-                  className="featured-card"
-                  onClick={() => {
-                    setNavigating(true)
-                    navigate('/product/vegetable-essentials-pack')
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="featured-image-wrapper">
-                    <img
-                      src={vegetablePackImage}
-                      alt="Vegetable Essentials Pack"
-                      className="featured-image"
-                    />
-                    <span className="featured-badge badge-new">NEW</span>
-                  </div>
-                  <h3 className="featured-name">Vegetable Essentials Pack</h3>
-                  <div className="featured-rating">
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star">★</span>
-                    <span className="star">★</span>
-                  </div>
-                  <div className="featured-price">
-                    <span className="current-price">₦68.00</span>
-                    <span className="original-price">₦85.00</span>
-                  </div>
-                </div>
-
-                <div
-                  className="featured-card"
-                  onClick={() => {
-                    setNavigating(true)
-                    navigate('/product/organic-staples-kit')
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="featured-image-wrapper">
-                    <img
-                      src={staplesKitImage}
-                      alt="Organic Staples Kit"
-                      className="featured-image"
-                    />
-                    <span className="featured-badge badge-hot">HOT</span>
-                  </div>
-                  <h3 className="featured-name">Organic Staples Kit</h3>
-                  <div className="featured-rating">
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star">★</span>
-                    <span className="star">★</span>
-                  </div>
-                  <div className="featured-price">
-                    <span className="current-price">₦73.60</span>
-                    <span className="original-price">₦92.00</span>
-                  </div>
-                </div>
-
-                <div
-                  className="featured-card"
-                  onClick={() => {
-                    setNavigating(true)
-                    navigate('/product/dairy-delight-pack')
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="featured-image-wrapper">
-                    <img
-                      src={dairyPackImage}
-                      alt="Dairy Delight Pack"
-                      className="featured-image"
-                    />
-                    <span className="featured-badge badge-new">NEW</span>
-                  </div>
-                  <h3 className="featured-name">Dairy Delight Pack</h3>
-                  <div className="featured-rating">
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star">★</span>
-                    <span className="star">★</span>
-                  </div>
-                  <div className="featured-price">
-                    <span className="current-price">₦58.50</span>
-                    <span className="original-price">₦78.00</span>
-                  </div>
-                </div>
-
-                {/* Row 2 */}
-                <div
-                  className="featured-card"
-                  onClick={() => {
-                    setNavigating(true)
-                    navigate('/product/snacks-munchies-combo')
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="featured-image-wrapper">
-                    <img
-                      src={snacksComboImage}
-                      alt="Snacks & Munchies Combo"
-                      className="featured-image"
-                    />
-                    <span className="featured-badge badge-new">NEW</span>
-                  </div>
-                  <h3 className="featured-name">Snacks & Munchies Combo</h3>
-                  <div className="featured-rating">
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star">★</span>
-                    <span className="star">★</span>
-                  </div>
-                  <div className="featured-price">
-                    <span className="current-price">₦68.00</span>
-                    <span className="original-price">₦85.00</span>
-                  </div>
-                </div>
-
-                <div
-                  className="featured-card"
-                  onClick={() => {
-                    setNavigating(true)
-                    navigate('/product/breakfast-essentials')
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="featured-image-wrapper">
-                    <img
-                      src={breakfastImage}
-                      alt="Breakfast Essentials"
-                      className="featured-image"
-                    />
-                    <span className="featured-badge badge-hot">HOT</span>
-                  </div>
-                  <h3 className="featured-name">Breakfast Essentials</h3>
-                  <div className="featured-rating">
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star">★</span>
-                    <span className="star">★</span>
-                  </div>
-                  <div className="featured-price">
-                    <span className="current-price">₦73.60</span>
-                    <span className="original-price">₦92.00</span>
-                  </div>
-                </div>
-
-                <div
-                  className="featured-card"
-                  onClick={() => {
-                    setNavigating(true)
-                    navigate('/product/healthy-living-kit')
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="featured-image-wrapper">
-                    <img
-                      src={healthKitImage}
-                      alt="Healthy Living Kit"
-                      className="featured-image"
-                    />
-                    <span className="featured-badge badge-new">NEW</span>
-                  </div>
-                  <h3 className="featured-name">Healthy Living Kit</h3>
-                  <div className="featured-rating">
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star">★</span>
-                    <span className="star">★</span>
-                  </div>
-                  <div className="featured-price">
-                    <span className="current-price">₦58.50</span>
-                    <span className="original-price">₦78.00</span>
-                  </div>
-                </div>
-
-                <div
-                  className="featured-card"
-                  onClick={() => {
-                    setNavigating(true)
-                    navigate('/product/bakery-favorites')
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="featured-image-wrapper">
-                    <img
-                      src={bakeryImage}
-                      alt="Bakery Favorites"
-                      className="featured-image"
-                    />
-                    <span className="featured-badge badge-sell">SELL -25%</span>
-                  </div>
-                  <h3 className="featured-name">Bakery Favorites</h3>
-                  <div className="featured-rating">
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star filled">★</span>
-                    <span className="star">★</span>
-                    <span className="star">★</span>
-                  </div>
-                  <div className="featured-price">
-                    <span className="current-price">₦135.00</span>
-                    <span className="original-price">₦180.00</span>
-                  </div>
-                </div>
-              </>
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
+                <div style={{ fontSize: '1.2rem', color: '#666' }}>No featured products available.</div>
+              </div>
             )}
           </div>
         </div>
@@ -1173,7 +1022,7 @@ function HomePage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="testimonials">
+      {/* <section className="testimonials">
         <div className="testimonials-container">
           <div className="testimonials-header">
             <p className="testimonials-label">// TESTIMONIALS</p>
@@ -1288,10 +1137,10 @@ function HomePage() {
             </button>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Latest Blog Section */}
-      <section className="latest-blog">
+      {/* <section className="latest-blog">
         <div className="blog-container">
           <h2 className="blog-title">Latest Blog</h2>
           
@@ -1399,7 +1248,7 @@ function HomePage() {
             </article>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Footer */}
       <footer className="footer">
@@ -1504,12 +1353,9 @@ function HomePage() {
             <div className="footer-column">
               <h4 className="footer-column-title">Company</h4>
               <ul className="footer-links">
-                <li><a href="#about">About</a></li>
-                <li><a href="#blog">Blog</a></li>
-                <li><a href="#products">All Products</a></li>
-                <li><a href="#locations">Locations Map</a></li>
-                <li><a href="#faq">FAQ</a></li>
-                <li><a href="#contact">Contact us</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/about'); }}>About</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/shop'); }}>All Products</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/contact'); }}>Contact us</a></li>
               </ul>
             </div>
 
@@ -1517,12 +1363,10 @@ function HomePage() {
             <div className="footer-column">
               <h4 className="footer-column-title">Services.</h4>
               <ul className="footer-links">
-                <li><a href="#tracking">Order tracking</a></li>
-                <li><a href="#wishlist">Wish List</a></li>
-                <li><a href="#login">Login</a></li>
-                <li><a href="#account">My account</a></li>
-                <li><a href="#terms">Terms & Conditions</a></li>
-                <li><a href="#promotions">Promotional Offers</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/orders'); }}>Order tracking</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/wishlist'); }}>Wish List</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/signup'); }}>Login</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/account'); }}>My account</a></li>
               </ul>
             </div>
 
@@ -1530,12 +1374,9 @@ function HomePage() {
             <div className="footer-column">
               <h4 className="footer-column-title">Customer Care</h4>
               <ul className="footer-links">
-                <li><a href="#login">Login</a></li>
-                <li><a href="#account">My account</a></li>
-                <li><a href="#wishlist">Wish List</a></li>
-                <li><a href="#tracking">Order tracking</a></li>
-                <li><a href="#faq">FAQ</a></li>
-                <li><a href="#contact">Contact us</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/wishlist'); }}>Wish List</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/orders'); }}>Order tracking</a></li>
+                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/contact'); }}>Contact us</a></li>
               </ul>
             </div>
 
@@ -1564,11 +1405,7 @@ function HomePage() {
           <div className="footer-bottom-container">
             <p className="copyright">All Rights Reserved @ <span className="footer-market">Market</span><span className="footer-green">Green</span> 2025</p>
             <div className="footer-legal">
-              <a href="#terms">Terms & Conditions</a>
-              <span className="legal-divider">|</span>
-              <a href="#claim">Claim</a>
-              <span className="legal-divider">|</span>
-              <a href="#privacy">Privacy & Policy</a>
+              {/* Legal links removed - no corresponding pages */}
             </div>
           </div>
         </div>
